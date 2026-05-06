@@ -201,7 +201,10 @@ export function useGameManager({
       const availableBranches = branches[e.id] || ["Stable"];
       const selectedBranch = selectedBranches[e.id] || availableBranches[0];
       let url = dynamicUrls[e.id] || e.url;
-      const branchToUse = selectedBranch === "Stable" ? (dynamicUrls[`${e.id}_Stable`] || "nightly") : selectedBranch;
+      const defaultBranchFromUrl = e.url.includes("/releases/download/") 
+        ? e.url.split("/releases/download/")[1].split("/")[0] 
+        : "nightly";
+      const branchToUse = selectedBranch === "Stable" ? (dynamicUrls[`${e.id}_Stable`] || defaultBranchFromUrl) : selectedBranch;
       if (e.url.includes("github.com")) {
         const baseUrl = e.url.split("/releases/download/")[0];
         const filename = e.url.split("/").pop();
