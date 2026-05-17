@@ -1,16 +1,49 @@
-import { useState, useEffect, memo, useCallback, useRef, useContext } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { useUI, useAudio, useConfig, GameContext, useGame } from '../../context/LauncherContext';
-import { TauriService, InstalledWorkshopPackage } from '../../services/TauriService';
-const REGISTRY_URL = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/registry.json';
-const VERSIONS_URL = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/versions.json';
-const RAW_BASE = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main';
-const VERSIONS_BASE = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/.00versions';
-const CATEGORY_TABS = ['Skin', 'Texture', 'World', 'Mod', 'DLC'] as const;
-const ALL_TABS = [...CATEGORY_TABS, 'Versions', 'Installed', 'Search'] as const;
-type TabType = typeof ALL_TABS[number];
+import {
+  useState,
+  useEffect,
+  memo,
+  useCallback,
+  useRef,
+  useContext,
+  useMemo,
+} from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import {
+  useUI,
+  useAudio,
+  useConfig,
+  GameContext,
+  useGame,
+} from "../../context/LauncherContext";
+import {
+  TauriService,
+  InstalledWorkshopPackage,
+} from "../../services/TauriService";
+const REGISTRY_URL =
+  "https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/registry.json";
+const VERSIONS_URL =
+  "https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/versions.json";
+const RAW_BASE =
+  "https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main";
+const VERSIONS_BASE =
+  "https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/.00versions";
+const BYTEBUKKIT_BASE = "https://emerald-bytebukkit.onrender.com";
+const SERVERS_URL =
+  "https://raw.githubusercontent.com/bytebukkit/servers/refs/heads/main/servers.json";
+const SERVERS_BASE =
+  "https://raw.githubusercontent.com/bytebukkit/servers/refs/heads/main";
+const CATEGORY_TABS = ["Skin", "Texture", "World", "Mod", "DLC"] as const;
+const ALL_TABS = [
+  ...CATEGORY_TABS,
+  "Versions",
+  "Installed",
+  "Server",
+  "Plugins",
+  "Search",
+] as const;
+type TabType = (typeof ALL_TABS)[number];
 interface RegistryPackage {
   id: string;
   name: string;
@@ -23,6 +56,44 @@ interface RegistryPackage {
   version: string;
   logo?: string;
   url?: string;
+  likes?: number;
+  download_count?: number;
+  game_version?: string;
+  github_url?: string;
+  file_name?: string;
+  file_size?: number;
+  server_address?: string;
+  server_homepage?: string;
+  server_type?: string;
+}
+
+interface ServerListing {
+  server_name: string;
+  server_type: string;
+  server_address: string;
+  server_owner: string;
+  server_homepage?: string;
+  console_version: string;
+  server_icon: string;
+}
+
+interface ByteBukkitAddon {
+  id: string;
+  name: string;
+  short_description: string;
+  description: string;
+  category: string;
+  game_version: string;
+  visibility: string;
+  github_url?: string;
+  created_at: string;
+  likes: number;
+  downloads: number;
+  file_name: string;
+  file_size: number;
+  has_image: boolean;
+  username: string;
+  displayName: string;
 }
 
 const COLS = 4;
@@ -33,15 +104,23 @@ const WorkshopView = memo(function WorkshopView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('Skin');
+  const [activeTab, setActiveTab] = useState<TabType>("Skin");
   const [allPackages, setAllPackages] = useState<RegistryPackage[]>([]);
   const [versionPackages, setVersionPackages] = useState<RegistryPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedPkg, setSelectedPkg] = useState<RegistryPackage | null>(null);
-  const [installedPkgs, setInstalledPkgs] = useState<InstalledWorkshopPackage[]>([]);
+  const [installedPkgs, setInstalledPkgs] = useState<
+    InstalledWorkshopPackage[]
+  >([]);
+  const [serverPlugins, setServerPlugins] = useState<RegistryPackage[]>([]);
+  const [serverCategory, setServerCategory] = useState<string>("all");
+  const [serverListings, setServerListings] = useState<RegistryPackage[]>([]);
+  const [serverListingCategory, setServerListingCategory] =
+    useState<string>("all");
+  const [savedServers, setSavedServers] = useState<Set<string>>(new Set());
   const refreshInstalled = useCallback(async () => {
     try {
       const data = await TauriService.workshopListInstalled();
@@ -57,11 +136,19 @@ const WorkshopView = memo(function WorkshopView() {
   }, [refreshInstalled]);
 
   useEffect(() => {
+    TauriService.loadConfig()
+      .then((cfg) => {
+        setSavedServers(new Set((cfg.savedServers || []).map((s) => s.ip)));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(REGISTRY_URL).then(r => r.json()),
-      fetch(VERSIONS_URL).then(r => r.json())
+      fetch(REGISTRY_URL).then((r) => r.json()),
+      fetch(VERSIONS_URL).then((r) => r.json()),
     ])
       .then(([registryData, versionsData]) => {
         setAllPackages(registryData.packages ?? []);
@@ -69,101 +156,267 @@ const WorkshopView = memo(function WorkshopView() {
         setLoading(false);
       })
       .catch((e) => {
-        setError(e.message ?? 'Failed to load registry');
+        setError(e.message ?? "Failed to load registry");
         setLoading(false);
       });
   }, []);
 
-  const getInstalledEntries = useCallback((pkgId: string) => {
-    if (activeTab === 'Versions') {
-      const isAdded = config.customEditions?.some((e: any) => e.id === pkgId || (e.url === versionPackages.find(p => p.id === pkgId)?.url));
-      if (isAdded) {
-        const vPkg = versionPackages.find(p => p.id === pkgId);
-        return [{
-          packageId: pkgId,
-          instanceId: pkgId,
-          version: vPkg?.version || '0.0.0',
-        }] as InstalledWorkshopPackage[];
+  useEffect(() => {
+    fetch(`${BYTEBUKKIT_BASE}/api/addons?limit=500`)
+      .then((r) => r.json())
+      .then((data: ByteBukkitAddon[]) => {
+        setServerPlugins(
+          data.map((a) => ({
+            id: a.id,
+            name: a.name,
+            author: a.displayName || a.username,
+            description: a.short_description,
+            extended_description: a.description,
+            category: [a.category],
+            thumbnail: `${BYTEBUKKIT_BASE}/api/addons/${a.id}/icon`,
+            version: "1.0",
+            likes: a.likes,
+            download_count: a.downloads,
+            game_version: a.game_version,
+            github_url: a.github_url,
+            file_name: a.file_name,
+            file_size: a.file_size,
+          })),
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch(SERVERS_URL)
+      .then((r) => r.json())
+      .then((data: { servers: ServerListing[] }) => {
+        setServerListings(
+          data.servers.map((s) => ({
+            id: s.server_name.toLowerCase().replace(/\s+/g, "-"),
+            name: s.server_name,
+            author: s.server_owner,
+            description: s.server_address,
+            extended_description: `**Type:** ${s.server_type}\n**Console:** ${s.console_version}\n**Owner:** ${s.server_owner}`,
+            category: [s.server_type],
+            thumbnail: `${SERVERS_BASE}${s.server_icon}`,
+            version: s.console_version,
+            server_address: s.server_address,
+            server_homepage: s.server_homepage,
+            server_type: s.server_type,
+          })),
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  const serverCategories = useMemo(() => {
+    const cats = new Set(serverPlugins.flatMap((p) => p.category));
+    return ["all", ...cats];
+  }, [serverPlugins]);
+
+  const serverListingCategories = useMemo(() => {
+    const cats = new Set(serverListings.flatMap((p) => p.category));
+    return ["all", ...cats];
+  }, [serverListings]);
+
+  const getInstalledEntries = useCallback(
+    (pkgId: string) => {
+      if (activeTab === "Versions") {
+        const isAdded = config.customEditions?.some(
+          (e: any) =>
+            e.id === pkgId ||
+            e.url === versionPackages.find((p) => p.id === pkgId)?.url,
+        );
+        if (isAdded) {
+          const vPkg = versionPackages.find((p) => p.id === pkgId);
+          return [
+            {
+              packageId: pkgId,
+              instanceId: pkgId,
+              version: vPkg?.version || "0.0.0",
+            },
+          ] as InstalledWorkshopPackage[];
+        }
+        return [];
       }
-      return [];
-    }
-    return installedPkgs.filter((p) => p.packageId === pkgId);
-  }, [installedPkgs, activeTab, config.customEditions, versionPackages]);
+      if (activeTab === "Plugins" || activeTab === "Server") return [];
+      return installedPkgs.filter((p) => p.packageId === pkgId);
+    },
+    [installedPkgs, activeTab, config.customEditions, versionPackages],
+  );
 
-  const isInstalled = useCallback((pkgId: string) => {
-    if (activeTab === 'Versions') {
-      return config.customEditions?.some((e: any) => e.id === pkgId || (e.url === versionPackages.find(p => p.id === pkgId)?.url)) ?? false;
-    }
-    return installedPkgs.some((p) => p.packageId === pkgId);
-  }, [installedPkgs, activeTab, config.customEditions, versionPackages]);
+  const isInstalled = useCallback(
+    (pkgId: string) => {
+      if (activeTab === "Plugins" || activeTab === "Server") return false;
+      if (activeTab === "Versions") {
+        return (
+          config.customEditions?.some(
+            (e: any) =>
+              e.id === pkgId ||
+              e.url === versionPackages.find((p) => p.id === pkgId)?.url,
+          ) ?? false
+        );
+      }
+      return installedPkgs.some((p) => p.packageId === pkgId);
+    },
+    [installedPkgs, activeTab, config.customEditions, versionPackages],
+  );
 
-  const hasUpdate = useCallback((pkg: RegistryPackage) => {
-    if (activeTab === 'Versions') return false;
-    const entries = installedPkgs.filter((p) => p.packageId === pkg.id);
-    return entries.length > 0 && entries.some((e) => e.version !== pkg.version);
-  }, [installedPkgs, activeTab]);
+  const hasUpdate = useCallback(
+    (pkg: RegistryPackage) => {
+      if (
+        activeTab === "Versions" ||
+        activeTab === "Plugins" ||
+        activeTab === "Server"
+      )
+        return false;
+      const entries = installedPkgs.filter((p) => p.packageId === pkg.id);
+      return (
+        entries.length > 0 && entries.some((e) => e.version !== pkg.version)
+      );
+    },
+    [installedPkgs, activeTab],
+  );
 
   const installedPackageList = allPackages.filter((pkg) => isInstalled(pkg.id));
-  const filteredItems = activeTab === 'Installed'
-    ? (search.trim()
-      ? installedPackageList.filter((pkg) => {
-        const q = search.toLowerCase();
-        return pkg.name.toLowerCase().includes(q) || pkg.author.toLowerCase().includes(q) || pkg.description.toLowerCase().includes(q);
-      })
-      : installedPackageList)
-    : (activeTab === 'Versions' ? versionPackages : allPackages).filter((pkg) => {
-      const matchesTab = (activeTab === 'Search' || activeTab === 'Versions') ? true : pkg.category.includes(activeTab);
-      if (!matchesTab) return false;
-      if (!search.trim()) return activeTab === 'Search' ? false : true;
-      const q = search.toLowerCase();
-      return (
-        pkg.name.toLowerCase().includes(q) ||
-        pkg.author.toLowerCase().includes(q) ||
-        pkg.description.toLowerCase().includes(q)
-      );
-    });
+  const filteredItems =
+    activeTab === "Installed"
+      ? search.trim()
+        ? installedPackageList.filter((pkg) => {
+            const q = search.toLowerCase();
+            return (
+              pkg.name.toLowerCase().includes(q) ||
+              pkg.author.toLowerCase().includes(q) ||
+              pkg.description.toLowerCase().includes(q)
+            );
+          })
+        : installedPackageList
+      : activeTab === "Plugins"
+        ? search.trim()
+          ? serverPlugins.filter((pkg) => {
+              if (
+                serverCategory !== "all" &&
+                !pkg.category.includes(serverCategory)
+              )
+                return false;
+              const q = search.toLowerCase();
+              return (
+                pkg.name.toLowerCase().includes(q) ||
+                pkg.author.toLowerCase().includes(q) ||
+                pkg.description.toLowerCase().includes(q)
+              );
+            })
+          : serverCategory === "all"
+            ? serverPlugins
+            : serverPlugins.filter((pkg) =>
+                pkg.category.includes(serverCategory),
+              )
+        : activeTab === "Server"
+          ? search.trim()
+            ? serverListings.filter((pkg) => {
+                if (
+                  serverListingCategory !== "all" &&
+                  !pkg.category.includes(serverListingCategory)
+                )
+                  return false;
+                const q = search.toLowerCase();
+                return (
+                  pkg.name.toLowerCase().includes(q) ||
+                  pkg.author.toLowerCase().includes(q) ||
+                  pkg.description.toLowerCase().includes(q)
+                );
+              })
+            : serverListingCategory === "all"
+              ? serverListings
+              : serverListings.filter((pkg) =>
+                  pkg.category.includes(serverListingCategory),
+                )
+          : (activeTab === "Versions" ? versionPackages : allPackages).filter(
+              (pkg) => {
+                const matchesTab =
+                  activeTab === "Search" || activeTab === "Versions"
+                    ? true
+                    : pkg.category.includes(activeTab);
+                if (!matchesTab) return false;
+                if (!search.trim())
+                  return activeTab === "Search" ? false : true;
+                const q = search.toLowerCase();
+                return (
+                  pkg.name.toLowerCase().includes(q) ||
+                  pkg.author.toLowerCase().includes(q) ||
+                  pkg.description.toLowerCase().includes(q)
+                );
+              },
+            );
 
   useEffect(() => {
     setFocusedIdx(null);
-    if (activeTab === 'Search') {
+    if (activeTab === "Search") {
       setTimeout(() => searchRef.current?.focus(), 50);
     } else {
-      setSearch('');
+      setSearch("");
     }
   }, [activeTab]);
 
   useEffect(() => {
     if (focusedIdx !== null && gridRef.current) {
-      const el = gridRef.current.querySelector(`[data-card="${focusedIdx}"]`) as HTMLElement;
-      el?.scrollIntoView({ block: 'nearest' });
+      const el = gridRef.current.querySelector(
+        `[data-card="${focusedIdx}"]`,
+      ) as HTMLElement;
+      el?.scrollIntoView({ block: "nearest" });
     }
   }, [focusedIdx]);
 
-  const cycleTab = useCallback((direction: 'next' | 'prev') => {
-    playPressSound();
-    setActiveTab((prev) => {
-      const idx = ALL_TABS.indexOf(prev);
-      if (direction === 'next') return ALL_TABS[(idx + 1) % ALL_TABS.length];
-      return ALL_TABS[(idx - 1 + ALL_TABS.length) % ALL_TABS.length];
-    });
-  }, [playPressSound]);
-
-  const selectTab = useCallback((tab: TabType) => {
-    if (tab !== activeTab) {
+  const cycleTab = useCallback(
+    (direction: "next" | "prev") => {
       playPressSound();
-      setActiveTab(tab);
-    }
-  }, [activeTab, playPressSound]);
+      setActiveTab((prev) => {
+        const idx = ALL_TABS.indexOf(prev);
+        if (direction === "next") return ALL_TABS[(idx + 1) % ALL_TABS.length];
+        return ALL_TABS[(idx - 1 + ALL_TABS.length) % ALL_TABS.length];
+      });
+    },
+    [playPressSound],
+  );
 
-  const openModal = useCallback((pkg: RegistryPackage) => {
-    playPressSound();
-    setSelectedPkg(pkg);
-  }, [playPressSound]);
+  const selectTab = useCallback(
+    (tab: TabType) => {
+      if (tab !== activeTab) {
+        playPressSound();
+        setActiveTab(tab);
+      }
+    },
+    [activeTab, playPressSound],
+  );
+
+  const openModal = useCallback(
+    (pkg: RegistryPackage) => {
+      playPressSound();
+      setSelectedPkg(pkg);
+    },
+    [playPressSound],
+  );
 
   const closeModal = useCallback(() => {
     playBackSound();
     setSelectedPkg(null);
   }, [playBackSound]);
+
+  const toggleSavedServer = useCallback(async (serverPkg: RegistryPackage) => {
+    if (!serverPkg.server_address) return;
+    const cfg = await TauriService.loadConfig();
+    const current = cfg.savedServers || [];
+    const exists = current.some((s) => s.ip === serverPkg.server_address);
+    const newSaved = exists
+      ? current.filter((s) => s.ip !== serverPkg.server_address)
+      : [
+          ...current,
+          { name: serverPkg.name, ip: serverPkg.server_address, port: 25565 },
+        ];
+    await TauriService.saveConfig({ ...cfg, savedServers: newSaved });
+    setSavedServers(new Set(newSaved.map((s) => s.ip)));
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -171,48 +424,73 @@ const WorkshopView = memo(function WorkshopView() {
 
       const isSearchInput = document.activeElement === searchRef.current;
       if (isSearchInput) {
-        if (e.key === 'Escape') { setSearch(''); containerRef.current?.focus(); }
+        if (e.key === "Escape") {
+          setSearch("");
+          containerRef.current?.focus();
+        }
         return;
       }
 
       const count = filteredItems.length;
-      if (e.key === 'Escape' || e.key === 'Backspace') {
-        playBackSound(); setActiveView('main'); return;
+      if (e.key === "Escape" || e.key === "Backspace") {
+        playBackSound();
+        setActiveView("main");
+        return;
       }
-      if (e.key === 'e' || e.key === 'E') { cycleTab('next'); return; }
-      if (e.key === 'q' || e.key === 'Q') { cycleTab('prev'); return; }
+      if (e.key === "e" || e.key === "E") {
+        cycleTab("next");
+        return;
+      }
+      if (e.key === "q" || e.key === "Q") {
+        cycleTab("prev");
+        return;
+      }
 
       if (count === 0) return;
 
-      if (e.key === 'ArrowRight') {
+      if (e.key === "ArrowRight") {
         e.preventDefault();
         setFocusedIdx((p) => Math.min((p ?? -1) + 1, count - 1));
         playPressSound();
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         setFocusedIdx((p) => Math.max((p ?? 1) - 1, 0));
         playPressSound();
-      } else if (e.key === 'ArrowDown') {
+      } else if (e.key === "ArrowDown") {
         e.preventDefault();
         setFocusedIdx((p) => Math.min((p ?? -COLS) + COLS, count - 1));
         playPressSound();
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setFocusedIdx((p) => Math.max((p ?? COLS) - COLS, 0));
         playPressSound();
-      } else if (e.key === 'Enter' && focusedIdx !== null) {
+      } else if (e.key === "Enter" && focusedIdx !== null) {
         const pkg = filteredItems[focusedIdx];
         if (pkg) openModal(pkg);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [playBackSound, playPressSound, setActiveView, cycleTab, filteredItems, focusedIdx, selectedPkg, openModal]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    playBackSound,
+    playPressSound,
+    setActiveView,
+    cycleTab,
+    filteredItems,
+    focusedIdx,
+    selectedPkg,
+    openModal,
+  ]);
 
-  const isSearchTab = activeTab === 'Search';
-  const isInstalledTab = activeTab === 'Installed';
-  const isVersionTab = activeTab === 'Versions';
-  const showSearch = isSearchTab || isInstalledTab || isVersionTab;
+  const isSearchTab = activeTab === "Search";
+  const isInstalledTab = activeTab === "Installed";
+  const isVersionTab = activeTab === "Versions";
+  const showSearch =
+    isSearchTab ||
+    isInstalledTab ||
+    isVersionTab ||
+    activeTab === "Plugins" ||
+    activeTab === "Server";
   return (
     <motion.div
       ref={containerRef}
@@ -230,23 +508,24 @@ const WorkshopView = memo(function WorkshopView() {
       <div className="flex items-center justify-center gap-2 mb-6 w-full flex-wrap px-4">
         {ALL_TABS.map((tab) => {
           const isActive = tab === activeTab;
-          const updateCount = tab === 'Installed'
-            ? allPackages.filter((p) => hasUpdate(p)).length
-            : 0;
+          const updateCount =
+            tab === "Installed"
+              ? allPackages.filter((p) => hasUpdate(p)).length
+              : 0;
           return (
             <button
               key={tab}
               onClick={() => selectTab(tab)}
               className={`
                 relative h-10 px-6 text-lg mc-text-shadow tracking-widest border-none outline-none cursor-pointer transition-all
-                ${isActive ? 'text-[#FFFF55] scale-105' : 'text-white hover:text-[#FFFF55] hover:scale-105'}
+                ${isActive ? "text-[#FFFF55] scale-105" : "text-white hover:text-[#FFFF55] hover:scale-105"}
               `}
               style={{
                 backgroundImage: isActive
                   ? "url('/images/button_highlighted.png')"
                   : "url('/images/Button_Background.png')",
-                backgroundSize: '100% 100%',
-                imageRendering: 'pixelated',
+                backgroundSize: "100% 100%",
+                imageRendering: "pixelated",
               }}
             >
               {tab.toUpperCase()}
@@ -260,13 +539,11 @@ const WorkshopView = memo(function WorkshopView() {
         })}
       </div>
 
-      <div
-        className="w-[98%] flex-1 relative overflow-hidden"
-      >
+      <div className="w-[98%] flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait">
           {showSearch ? (
             <motion.div
-              key={isInstalledTab ? 'installed-tab' : 'search-tab'}
+              key={isInstalledTab ? "installed-tab" : "search-tab"}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -277,23 +554,39 @@ const WorkshopView = memo(function WorkshopView() {
                   className="flex items-center flex-1 h-12 px-4 border-2 border-[#444] bg-black/40 rounded shadow-inner"
                   style={{
                     backgroundImage: "url('/images/Button_Background2.png')",
-                    backgroundSize: '100% 100%',
-                    imageRendering: 'pixelated',
+                    backgroundSize: "100% 100%",
+                    imageRendering: "pixelated",
                   }}
                 >
                   <input
                     ref={searchRef}
                     type="text"
                     value={search}
-                    onChange={(e) => { setSearch(e.target.value); setFocusedIdx(null); }}
-                    placeholder={isInstalledTab ? "FILTER INSTALLED..." : (isVersionTab ? "FILTER VERSIONS..." : "ENTER KEYWORDS...")}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setFocusedIdx(null);
+                    }}
+                    placeholder={
+                      isInstalledTab
+                        ? "FILTER INSTALLED..."
+                        : isVersionTab
+                          ? "FILTER VERSIONS..."
+                          : activeTab === "Plugins"
+                            ? "FILTER PLUGINS..."
+                            : activeTab === "Server"
+                              ? "FILTER SERVERS..."
+                              : "ENTER KEYWORDS..."
+                    }
                     spellCheck={false}
                     autoFocus={isSearchTab}
                     className="bg-transparent border-none outline-none text-white text-lg mc-text-shadow w-full placeholder-white/40 font-['Mojangles'] tracking-widest"
                   />
                   {search && (
                     <button
-                      onClick={() => { setSearch(''); searchRef.current?.focus(); }}
+                      onClick={() => {
+                        setSearch("");
+                        searchRef.current?.focus();
+                      }}
                       className="text-white/60 hover:text-white text-lg ml-2 bg-transparent border-none outline-none cursor-pointer mc-text-shadow"
                     >
                       ✕
@@ -301,24 +594,73 @@ const WorkshopView = memo(function WorkshopView() {
                   )}
                 </div>
               </div>
-
-              <div ref={gridRef} className="flex-1 overflow-y-auto p-6 scroll-smooth">
+              {activeTab === "Plugins" && serverCategories.length > 1 && (
+                <div className="flex items-center gap-2 px-6 pb-3 overflow-x-auto scroll-smooth">
+                  {serverCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setServerCategory(cat)}
+                      className={`px-3 py-1 text-xs mc-text-shadow uppercase tracking-widest border outline-none cursor-pointer whitespace-nowrap transition-all ${
+                        serverCategory === cat
+                          ? "text-[#FFFF55] bg-black/60 border-[#FFFF55]"
+                          : "text-[#A0A0A0] bg-black/30 border-[#444] hover:text-white hover:border-[#888]"
+                      }`}
+                    >
+                      {cat === "all" ? "ALL" : cat.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {activeTab === "Server" && serverListingCategories.length > 1 && (
+                <div className="flex items-center gap-2 px-6 pb-3 overflow-x-auto scroll-smooth">
+                  {serverListingCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setServerListingCategory(cat)}
+                      className={`px-3 py-1 text-xs mc-text-shadow uppercase tracking-widest border outline-none cursor-pointer whitespace-nowrap transition-all ${
+                        serverListingCategory === cat
+                          ? "text-[#FFFF55] bg-black/60 border-[#FFFF55]"
+                          : "text-[#A0A0A0] bg-black/30 border-[#444] hover:text-white hover:border-[#888]"
+                      }`}
+                    >
+                      {cat === "all" ? "ALL" : cat.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div
+                ref={gridRef}
+                className="flex-1 overflow-y-auto p-6 scroll-smooth"
+              >
                 {isSearchTab && !search.trim() ? (
                   <div className="flex flex-col items-center justify-center h-[200px] opacity-40">
-                    <span className="text-xl mc-text-shadow tracking-widest uppercase">Start typing to search...</span>
+                    <span className="text-xl mc-text-shadow tracking-widest uppercase">
+                      Start typing to search...
+                    </span>
                   </div>
                 ) : loading ? (
                   <div className="flex items-center justify-center h-full">
-                    <span className="text-3xl text-[#FFFF55] mc-text-shadow tracking-widest animate-pulse uppercase">Searching Archives...</span>
+                    <span className="text-3xl text-[#FFFF55] mc-text-shadow tracking-widest animate-pulse uppercase">
+                      Searching Archives...
+                    </span>
                   </div>
                 ) : filteredItems.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <span className="text-2xl text-[#E0E0E0] mc-text-shadow uppercase tracking-widest opacity-60">
-                      {isInstalledTab ? 'Nothing Installed' : 'No results'}
+                      {isInstalledTab
+                        ? "Nothing Installed"
+                        : activeTab === "Plugins"
+                          ? "No plugins available"
+                          : activeTab === "Server"
+                            ? "No servers available"
+                            : "No results"}
                     </span>
                   </div>
                 ) : (
-                  <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+                  <div
+                    className="grid gap-6"
+                    style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
+                  >
                     {filteredItems.map((pkg, i) => (
                       <PackageCard
                         key={pkg.id}
@@ -334,17 +676,40 @@ const WorkshopView = memo(function WorkshopView() {
                     ))}
                   </div>
                 )}
+                {(activeTab === "Plugins" || activeTab === "Server") && (
+                  <div className="flex justify-center pt-4 pb-2">
+                    <img
+                      src="/images/bytebukkit.png"
+                      alt="ByteBukkit"
+                      className="h-5 opacity-70"
+                    />
+                  </div>
+                )}
               </div>
             </motion.div>
           ) : loading ? (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-center">
-              <span className="text-3xl text-[#FFFF55] mc-text-shadow tracking-widest animate-pulse uppercase">Searching Archives...</span>
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <span className="text-3xl text-[#FFFF55] mc-text-shadow tracking-widest animate-pulse uppercase">
+                Searching Archives...
+              </span>
             </motion.div>
           ) : error ? (
-            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl text-red-500 mc-text-shadow uppercase tracking-widest">{error}</span>
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <span className="text-xl text-red-500 mc-text-shadow uppercase tracking-widest">
+                {error}
+              </span>
             </motion.div>
           ) : (
             <motion.div
@@ -357,10 +722,15 @@ const WorkshopView = memo(function WorkshopView() {
             >
               {filteredItems.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
-                  <span className="text-2xl text-[#E0E0E0] mc-text-shadow uppercase tracking-widest opacity-40">Empty category</span>
+                  <span className="text-2xl text-[#E0E0E0] mc-text-shadow uppercase tracking-widest opacity-40">
+                    Empty category
+                  </span>
                 </div>
               ) : (
-                <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+                <div
+                  className="grid gap-6"
+                  style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
+                >
                   {filteredItems.map((pkg, i) => (
                     <PackageCard
                       key={pkg.id}
@@ -383,11 +753,24 @@ const WorkshopView = memo(function WorkshopView() {
 
       <div className="w-full mt-6 mb-4 flex justify-center">
         <button
-          onClick={() => { playBackSound(); setActiveView('main'); }}
+          onClick={() => {
+            playBackSound();
+            setActiveView("main");
+          }}
           className="w-72 h-10 flex items-center justify-center text-xl mc-text-shadow hover:text-[#FFFF55] text-white border-none outline-none transition-all"
-          style={{ backgroundImage: "url('/images/Button_Background.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundImage = "url('/images/button_highlighted.png')"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundImage = "url('/images/Button_Background.png')"; }}
+          style={{
+            backgroundImage: "url('/images/Button_Background.png')",
+            backgroundSize: "100% 100%",
+            imageRendering: "pixelated",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.backgroundImage =
+              "url('/images/button_highlighted.png')";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.backgroundImage =
+              "url('/images/Button_Background.png')";
+          }}
         >
           Back
         </button>
@@ -402,7 +785,15 @@ const WorkshopView = memo(function WorkshopView() {
             installedEntries={getInstalledEntries(selectedPkg.id)}
             onInstallComplete={refreshInstalled}
             onUninstallComplete={refreshInstalled}
-            isVersionTab={activeTab === 'Versions'}
+            isVersionTab={activeTab === "Versions"}
+            isServerTab={activeTab === "Plugins"}
+            isGameServerTab={activeTab === "Server"}
+            isSaved={
+              selectedPkg.server_address
+                ? savedServers.has(selectedPkg.server_address)
+                : false
+            }
+            onToggleSave={toggleSavedServer}
           />
         )}
       </AnimatePresence>
@@ -410,7 +801,16 @@ const WorkshopView = memo(function WorkshopView() {
   );
 });
 
-function PackageCard({ pkg, index, focused, onHover, onClick, installed, hasUpdate, isVersionTab }: {
+function PackageCard({
+  pkg,
+  index,
+  focused,
+  onHover,
+  onClick,
+  installed,
+  hasUpdate,
+  isVersionTab,
+}: {
   pkg: RegistryPackage;
   index: number;
   focused: boolean;
@@ -420,53 +820,79 @@ function PackageCard({ pkg, index, focused, onHover, onClick, installed, hasUpda
   hasUpdate: boolean;
   isVersionTab?: boolean;
 }) {
-  const thumbnailUrl = isVersionTab
-    ? `${VERSIONS_BASE}/${pkg.id}/${pkg.thumbnail}`
-    : `${RAW_BASE}/${pkg.id}/${pkg.thumbnail}`;
+  const thumbnailUrl = pkg.thumbnail.startsWith("http")
+    ? pkg.thumbnail
+    : isVersionTab
+      ? `${VERSIONS_BASE}/${pkg.id}/${pkg.thumbnail}`
+      : `${RAW_BASE}/${pkg.id}/${pkg.thumbnail}`;
   const [imgError, setImgError] = useState(false);
   return (
     <div
       data-card={index}
       onMouseEnter={onHover}
       onClick={onClick}
-      className={`flex flex-col cursor-pointer transition-all border-2 ${focused ? 'border-[#FFFF55] scale-105 z-10' : 'border-[#333] hover:border-[#FFFF55]'} rounded-sm overflow-hidden bg-black/40`}
+      className={`flex flex-col cursor-pointer transition-all border-2 ${focused ? "border-[#FFFF55] scale-105 z-10" : "border-[#333] hover:border-[#FFFF55]"} rounded-sm overflow-hidden bg-black/40`}
       style={{
         backgroundImage: "url('/images/frame_background.png')",
-        backgroundSize: '100% 100%',
-        imageRendering: 'pixelated',
-        boxShadow: focused ? '0 0 20px rgba(255, 255, 85, 0.2)' : 'none',
+        backgroundSize: "100% 100%",
+        imageRendering: "pixelated",
+        boxShadow: focused ? "0 0 20px rgba(255, 255, 85, 0.2)" : "none",
       }}
     >
-      <div className="w-full h-[120px] relative flex items-center justify-center overflow-hidden bg-black/50 border-b border-[#333]">
+      <div
+        className={`w-full relative flex items-center justify-center overflow-hidden bg-black/50 border-b border-[#333] ${pkg.thumbnail.startsWith("http") ? "aspect-square" : "h-[120px]"}`}
+      >
         {imgError ? (
-          <span className="text-[#555] text-sm mc-text-shadow uppercase tracking-widest">No Image</span>
+          <span className="text-[#555] text-sm mc-text-shadow uppercase tracking-widest">
+            No Image
+          </span>
         ) : (
-          <img src={thumbnailUrl} alt={pkg.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-            style={{ imageRendering: 'pixelated' }} onError={() => setImgError(true)} />
+          <img
+            src={thumbnailUrl}
+            alt={pkg.name}
+            className={`w-full h-full transition-transform ${pkg.thumbnail.startsWith("http") ? "object-contain p-2" : "object-cover group-hover:scale-110"}`}
+            style={{ imageRendering: "pixelated" }}
+            onError={() => setImgError(true)}
+          />
         )}
         <div className="absolute top-1 right-1 flex gap-1">
           {pkg.category.slice(0, 1).map((c) => (
-            <span key={c} className="text-[8px] bg-black/80 border border-[#555] px-1.5 py-0.5 text-[#FFFF55] mc-text-shadow uppercase tracking-tighter">{c}</span>
+            <span
+              key={c}
+              className="text-[8px] bg-black/80 border border-[#555] px-1.5 py-0.5 text-[#FFFF55] mc-text-shadow uppercase tracking-tighter"
+            >
+              {c}
+            </span>
           ))}
         </div>
         {hasUpdate && (
           <div className="absolute top-1 left-1">
-            <span className="text-[8px] bg-[#FF8800]/90 border border-[#FF6600] px-1.5 py-0.5 text-white mc-text-shadow uppercase tracking-tighter">Update</span>
+            <span className="text-[8px] bg-[#FF8800]/90 border border-[#FF6600] px-1.5 py-0.5 text-white mc-text-shadow uppercase tracking-tighter">
+              Update
+            </span>
           </div>
         )}
         {installed && !hasUpdate && (
           <div className="absolute top-1 left-1">
-            <span className="text-[8px] bg-[#55FF55] border border-[#55FF55]/60 px-1.5 py-0.5 text-[#003300] mc-text-shadow uppercase tracking-tighter shadow-sm font-bold">{isVersionTab ? 'Added' : 'Installed'}</span>
+            <span className="text-[8px] bg-[#55FF55] border border-[#55FF55]/60 px-1.5 py-0.5 text-[#003300] mc-text-shadow uppercase tracking-tighter shadow-sm font-bold">
+              {isVersionTab ? "Added" : "Installed"}
+            </span>
           </div>
         )}
       </div>
       <div className="flex flex-col p-3 gap-1 relative bg-gradient-to-b from-transparent to-black/20">
-        <span className={`text-base mc-text-shadow leading-tight truncate font-bold tracking-wide ${focused ? 'text-[#FFFF55]' : 'text-white'}`}>
+        <span
+          className={`text-base mc-text-shadow leading-tight truncate font-bold tracking-wide ${focused ? "text-[#FFFF55]" : "text-white"}`}
+        >
           {pkg.name}
         </span>
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-[#A0A0A0] mc-text-shadow uppercase tracking-widest">v{pkg.version}</span>
-          <span className="text-[9px] text-[#55FF55] mc-text-shadow truncate opacity-80">{pkg.author}</span>
+          <span className="text-[10px] text-[#A0A0A0] mc-text-shadow uppercase tracking-widest">
+            v{pkg.version}
+          </span>
+          <span className="text-[9px] text-[#55FF55] mc-text-shadow truncate opacity-80">
+            {pkg.author}
+          </span>
         </div>
         <p className="text-[10px] text-[#888] mc-text-shadow leading-[1.3] line-clamp-2 min-h-[2.6em] mt-1 italic">
           {pkg.description}
@@ -476,7 +902,19 @@ function PackageCard({ pkg, index, focused, onHover, onClick, installed, hasUpda
   );
 }
 
-function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstallComplete, onUninstallComplete, isVersionTab }: {
+function PackageModal({
+  pkg,
+  onClose,
+  playPressSound,
+  installedEntries,
+  onInstallComplete,
+  onUninstallComplete,
+  isVersionTab,
+  isServerTab,
+  isGameServerTab,
+  isSaved,
+  onToggleSave,
+}: {
   pkg: RegistryPackage;
   onClose: () => void;
   playPressSound: () => void;
@@ -484,45 +922,90 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
   onInstallComplete: () => void;
   onUninstallComplete: () => void;
   isVersionTab?: boolean;
+  isServerTab?: boolean;
+  isGameServerTab?: boolean;
+  isSaved?: boolean;
+  onToggleSave?: (pkg: RegistryPackage) => void;
 }) {
   const { addCustomEdition } = useGame();
-  const thumbnailUrl = isVersionTab
-    ? `${VERSIONS_BASE}/${pkg.id}/${pkg.thumbnail}`
-    : `${RAW_BASE}/${pkg.id}/${pkg.thumbnail}`;
+  const thumbnailUrl = pkg.thumbnail.startsWith("http")
+    ? pkg.thumbnail
+    : isVersionTab
+      ? `${VERSIONS_BASE}/${pkg.id}/${pkg.thumbnail}`
+      : `${RAW_BASE}/${pkg.id}/${pkg.thumbnail}`;
   const [imgError, setImgError] = useState(false);
-  const [modalFocus, setModalFocus] = useState<'install' | 'uninstall' | 'close'>('install');
+  const [modalFocus, setModalFocus] = useState<
+    "install" | "uninstall" | "close"
+  >("install");
   const [showInstall, setShowInstall] = useState(false);
   const [showUninstall, setShowUninstall] = useState(false);
   const hasInstalled = installedEntries.length > 0;
-  const needsUpdate = hasInstalled && installedEntries.some((e) => e.version !== pkg.version);
-  const focusOptions: Array<'install' | 'uninstall' | 'close'> = (hasInstalled || isVersionTab)
-    ? ['install', 'uninstall', 'close']
-    : ['install', 'close'];
+  const needsUpdate =
+    hasInstalled && installedEntries.some((e) => e.version !== pkg.version);
+  const focusOptions: Array<"install" | "uninstall" | "close"> = isGameServerTab
+    ? ["install", "close"]
+    : isServerTab
+      ? ["install", "close"]
+      : hasInstalled || isVersionTab
+        ? ["install", "uninstall", "close"]
+        : ["install", "close"];
 
   useEffect(() => {
     if (showInstall || showUninstall) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Backspace') {
+      if (e.key === "Escape" || e.key === "Backspace") {
         onClose();
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
+      } else if (
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight" ||
+        e.key === "Tab"
+      ) {
         e.preventDefault();
         playPressSound();
         setModalFocus((p) => {
           const idx = focusOptions.indexOf(p);
           return focusOptions[(idx + 1) % focusOptions.length];
         });
-      } else if (e.key === 'Enter') {
-        if (modalFocus === 'close') onClose();
-        else if (modalFocus === 'install') handleAction();
-        else if (modalFocus === 'uninstall') setShowUninstall(true);
+      } else if (e.key === "Enter") {
+        if (modalFocus === "close") onClose();
+        else if (modalFocus === "install") handleAction();
+        else if (modalFocus === "uninstall") setShowUninstall(true);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [modalFocus, showInstall, showUninstall, onClose, playPressSound, focusOptions]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    modalFocus,
+    showInstall,
+    showUninstall,
+    onClose,
+    playPressSound,
+    focusOptions,
+  ]);
 
   const handleAction = async () => {
-    if (isVersionTab) {
+    if (isGameServerTab) {
+      playPressSound();
+      if (onToggleSave) onToggleSave(pkg);
+    } else if (isServerTab) {
+      playPressSound();
+      try {
+        const path = await TauriService.saveFileDialog(
+          "Save Server Plugin",
+          pkg.file_name || `${pkg.name}.dll`,
+          ["*.dll", "*"],
+        );
+        if (!path) return;
+        const response = await fetch(
+          `${BYTEBUKKIT_BASE}/api/addons/${pkg.id}/download`,
+        );
+        const blob = await response.blob();
+        const buffer = await blob.arrayBuffer();
+        await TauriService.writeBinaryFile(path, new Uint8Array(buffer));
+      } catch (e) {
+        console.error(e);
+      }
+    } else if (isVersionTab) {
       if (hasInstalled) return;
       playPressSound();
       try {
@@ -534,7 +1017,7 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
           desc: pkg.description,
           url: pkg.url!,
           category: pkg.category,
-          logo: localLogoPath
+          logo: localLogoPath,
         });
         onInstallComplete();
       } catch (e) {
@@ -545,7 +1028,21 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
     }
   };
 
-  const installLabel = isVersionTab ? (hasInstalled ? 'ADDED' : 'ADD') : (!hasInstalled ? 'INSTALL' : needsUpdate ? 'UPDATE' : 'REINSTALL');
+  const installLabel = isGameServerTab
+    ? isSaved
+      ? "ADDED"
+      : "ADD"
+    : isServerTab
+      ? "DOWNLOAD"
+      : isVersionTab
+        ? hasInstalled
+          ? "ADDED"
+          : "ADD"
+        : !hasInstalled
+          ? "INSTALL"
+          : needsUpdate
+            ? "UPDATE"
+            : "REINSTALL";
   return (
     <>
       <motion.div
@@ -564,32 +1061,54 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
           className="flex flex-col w-[640px] max-h-[85vh] overflow-hidden font-['Mojangles'] border-2 border-[#555] rounded-sm"
           style={{
             backgroundImage: "url('/images/frame_background.png')",
-            backgroundSize: '100% 100%',
-            imageRendering: 'pixelated',
+            backgroundSize: "100% 100%",
+            imageRendering: "pixelated",
           }}
         >
           <div className="w-full h-[240px] flex-shrink-0 bg-black/60 overflow-hidden relative border-b border-[#444]">
             {imgError ? (
               <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                <span className="text-4xl mc-text-shadow uppercase tracking-widest">No Image</span>
+                <span className="text-4xl mc-text-shadow uppercase tracking-widest">
+                  No Image
+                </span>
               </div>
             ) : (
-              <img src={thumbnailUrl} alt={pkg.name} className="w-full h-full object-cover"
-                style={{ imageRendering: 'pixelated' }} onError={() => setImgError(true)} />
+              <img
+                src={thumbnailUrl}
+                alt={pkg.name}
+                className="w-full h-full object-cover"
+                style={{ imageRendering: "pixelated" }}
+                onError={() => setImgError(true)}
+              />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
             <div className="absolute bottom-4 left-6 right-6">
-              <span className="text-3xl text-white mc-text-shadow block leading-tight tracking-wide font-bold">{pkg.name}</span>
-              <span className="text-base text-[#FFFF55] mc-text-shadow uppercase tracking-widest opacity-90">By {pkg.author}</span>
+              <span className="text-3xl text-white mc-text-shadow block leading-tight tracking-wide font-bold">
+                {pkg.name}
+              </span>
+              <span className="text-base text-[#FFFF55] mc-text-shadow uppercase tracking-widest opacity-90">
+                By {pkg.author}
+              </span>
             </div>
             {needsUpdate && (
               <div className="absolute top-3 right-3 bg-[#FF8800] border border-[#FF6600] px-2 py-1">
-                <span className="text-[10px] text-white mc-text-shadow uppercase tracking-widest">Update Available</span>
+                <span className="text-[10px] text-white mc-text-shadow uppercase tracking-widest">
+                  Update Available
+                </span>
               </div>
             )}
             {hasInstalled && !needsUpdate && (
               <div className="absolute top-3 right-3 bg-[#003300] border border-[#55FF55]/60 px-2 py-1">
-                <span className="text-[10px] text-[#55FF55] mc-text-shadow uppercase tracking-widest">Installed</span>
+                <span className="text-[10px] text-[#55FF55] mc-text-shadow uppercase tracking-widest">
+                  Installed
+                </span>
+              </div>
+            )}
+            {isGameServerTab && isSaved && (
+              <div className="absolute top-3 right-3 bg-[#003300] border border-[#55FF55]/60 px-2 py-1">
+                <span className="text-[10px] text-[#55FF55] mc-text-shadow uppercase tracking-widest">
+                  Saved
+                </span>
               </div>
             )}
           </div>
@@ -597,60 +1116,219 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
           <div className="flex flex-col p-6 gap-6 overflow-y-auto flex-1">
             <div className="space-y-4">
               <div className="space-y-2">
-                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">Project Description</span>
-                <p className="text-sm text-[#C0C0C0] mc-text-shadow leading-relaxed italic opacity-90">{pkg.description}</p>
+                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">
+                  Project Description
+                </span>
+                <p className="text-sm text-[#C0C0C0] mc-text-shadow leading-relaxed italic opacity-90">
+                  {pkg.description}
+                </p>
               </div>
 
-              {pkg.extended_description && pkg.extended_description.trim() !== "" && (
-                <div className="space-y-2 bg-black/20 p-4 border border-[#333] rounded-sm">
-                  <span className="text-[10px] text-[#555] mc-text-shadow uppercase tracking-[0.2em] font-bold">Additional Resources</span>
-                  <div className="text-sm text-[#A0A0A0] mc-text-shadow leading-relaxed workshop-markdown">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{pkg.extended_description}</ReactMarkdown>
+              {pkg.extended_description &&
+                pkg.extended_description.trim() !== "" && (
+                  <div className="space-y-2 bg-black/20 p-4 border border-[#333] rounded-sm">
+                    <span className="text-[10px] text-[#555] mc-text-shadow uppercase tracking-[0.2em] font-bold">
+                      Additional Resources
+                    </span>
+                    <div className="text-sm text-[#A0A0A0] mc-text-shadow leading-relaxed workshop-markdown">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {pkg.extended_description}
+                      </ReactMarkdown>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-8 pt-4 border-t border-[#333]">
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">Metadata</span>
+                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">
+                  Metadata
+                </span>
                 <div className="flex flex-col gap-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[#888] mc-text-shadow">Version:</span>
-                    <span className="text-white mc-text-shadow">v{pkg.version}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[#888] mc-text-shadow">Package ID:</span>
-                    <span className="text-[#55FF55] mc-text-shadow truncate ml-2">{pkg.id}</span>
-                  </div>
+                  {isGameServerTab ? (
+                    <>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Address:
+                        </span>
+                        <span className="text-[#55FF55] mc-text-shadow">
+                          {pkg.server_address || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Type:
+                        </span>
+                        <span className="text-white mc-text-shadow">
+                          {pkg.server_type || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Console:
+                        </span>
+                        <span className="text-white mc-text-shadow">
+                          {pkg.version}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Owner:
+                        </span>
+                        <span className="text-white mc-text-shadow">
+                          {pkg.author}
+                        </span>
+                      </div>
+                      {pkg.server_homepage && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-[#888] mc-text-shadow">
+                            Homepage:
+                          </span>
+                          <a
+                            href={pkg.server_homepage}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              TauriService.openUrl(pkg.server_homepage!);
+                            }}
+                            className="text-[#55FF55] mc-text-shadow truncate ml-2 underline cursor-pointer hover:text-[#FFFF55]"
+                          >
+                            {pkg.server_homepage}
+                          </a>
+                        </div>
+                      )}
+                    </>
+                  ) : isServerTab ? (
+                    <>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Downloads:
+                        </span>
+                        <span className="text-white mc-text-shadow">
+                          {pkg.download_count?.toLocaleString() ?? 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Likes:
+                        </span>
+                        <span className="text-white mc-text-shadow">
+                          {pkg.likes?.toLocaleString() ?? 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Game Version:
+                        </span>
+                        <span className="text-[#55FF55] mc-text-shadow">
+                          {pkg.game_version || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          File:
+                        </span>
+                        <span className="text-white mc-text-shadow truncate ml-2">
+                          {pkg.file_name || "N/A"}
+                        </span>
+                      </div>
+                      {pkg.file_size && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-[#888] mc-text-shadow">
+                            File Size:
+                          </span>
+                          <span className="text-white mc-text-shadow">
+                            {(pkg.file_size / 1024).toFixed(1)} KB
+                          </span>
+                        </div>
+                      )}
+                      {pkg.github_url && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-[#888] mc-text-shadow">
+                            GitHub:
+                          </span>
+                          <a
+                            href={pkg.github_url}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              TauriService.openUrl(pkg.github_url!);
+                            }}
+                            className="text-[#55FF55] mc-text-shadow truncate ml-2 underline cursor-pointer hover:text-[#FFFF55]"
+                          >
+                            {pkg.github_url}
+                          </a>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Version:
+                        </span>
+                        <span className="text-white mc-text-shadow">
+                          v{pkg.version}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#888] mc-text-shadow">
+                          Package ID:
+                        </span>
+                        <span className="text-[#55FF55] mc-text-shadow truncate ml-2">
+                          {pkg.id}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   {hasInstalled && (
                     <div className="flex justify-between text-xs">
-                      <span className="text-[#888] mc-text-shadow">Installed:</span>
-                      <span className={`mc-text-shadow truncate ml-2 ${needsUpdate ? 'text-[#FF8800]' : 'text-[#55FF55]'}`}>
+                      <span className="text-[#888] mc-text-shadow">
+                        Installed:
+                      </span>
+                      <span
+                        className={`mc-text-shadow truncate ml-2 ${needsUpdate ? "text-[#FF8800]" : "text-[#55FF55]"}`}
+                      >
                         v{installedEntries[0]?.version}
-                        {needsUpdate ? ' (outdated)' : ''}
+                        {needsUpdate ? " (outdated)" : ""}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">Categories</span>
+                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">
+                  Categories
+                </span>
                 <div className="flex flex-wrap gap-1.5">
                   {pkg.category.map((c) => (
-                    <span key={c} className="text-[10px] bg-black/60 border border-[#444] px-2 py-0.5 text-[#A0A0A0] mc-text-shadow uppercase tracking-widest">{c}</span>
+                    <span
+                      key={c}
+                      className="text-[10px] bg-black/60 border border-[#444] px-2 py-0.5 text-[#A0A0A0] mc-text-shadow uppercase tracking-widest"
+                    >
+                      {c}
+                    </span>
                   ))}
                 </div>
               </div>
             </div>
             {pkg.zips && Object.keys(pkg.zips).length > 0 && (
               <div className="flex flex-col gap-3 pt-4 border-t border-[#333]">
-                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">Files</span>
+                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">
+                  Files
+                </span>
                 <div className="space-y-1.5">
                   {Object.entries(pkg.zips).map(([file, dest]) => (
-                    <div key={file} className="flex items-center justify-between gap-4 bg-black/20 p-2 rounded-sm border border-[#222]">
-                      <span className="text-xs text-[#A0A0A0] mc-text-shadow font-mono">{file}</span>
-                      {dest && <span className="text-[9px] text-[#fff] mc-text-shadow truncate uppercase tracking-tighter">{dest}</span>}
+                    <div
+                      key={file}
+                      className="flex items-center justify-between gap-4 bg-black/20 p-2 rounded-sm border border-[#222]"
+                    >
+                      <span className="text-xs text-[#A0A0A0] mc-text-shadow font-mono">
+                        {file}
+                      </span>
+                      {dest && (
+                        <span className="text-[9px] text-[#fff] mc-text-shadow truncate uppercase tracking-tighter">
+                          {dest}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -659,39 +1337,48 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
 
             <div className="flex items-center gap-4 pt-4 mt-auto">
               <button
-                onMouseEnter={() => setModalFocus('install')}
+                onMouseEnter={() => setModalFocus("install")}
                 onClick={handleAction}
-                className={`flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === 'install' ? 'text-[#FFFF55] scale-105' : 'text-white'}`}
+                className={`flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === "install" ? "text-[#FFFF55] scale-105" : "text-white"}`}
                 style={{
-                  backgroundImage: modalFocus === 'install' ? "url('/images/button_highlighted.png')" : "url('/images/Button_Background.png')",
-                  backgroundSize: '100% 100%',
-                  imageRendering: 'pixelated',
+                  backgroundImage:
+                    modalFocus === "install"
+                      ? "url('/images/button_highlighted.png')"
+                      : "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
                 }}
               >
                 {installLabel}
               </button>
               {hasInstalled && (
                 <button
-                  onMouseEnter={() => setModalFocus('uninstall')}
+                  onMouseEnter={() => setModalFocus("uninstall")}
                   onClick={() => setShowUninstall(true)}
-                  className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === 'uninstall' ? 'text-[#FF5555] scale-105' : 'text-white'}`}
+                  className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === "uninstall" ? "text-[#FF5555] scale-105" : "text-white"}`}
                   style={{
-                    backgroundImage: modalFocus === 'uninstall' ? "url('/images/button_highlighted.png')" : "url('/images/Button_Background.png')",
-                    backgroundSize: '100% 100%',
-                    imageRendering: 'pixelated',
+                    backgroundImage:
+                      modalFocus === "uninstall"
+                        ? "url('/images/button_highlighted.png')"
+                        : "url('/images/Button_Background.png')",
+                    backgroundSize: "100% 100%",
+                    imageRendering: "pixelated",
                   }}
                 >
                   REMOVE
                 </button>
               )}
               <button
-                onMouseEnter={() => setModalFocus('close')}
+                onMouseEnter={() => setModalFocus("close")}
                 onClick={onClose}
-                className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === 'close' ? 'text-[#FFFF55] scale-105' : 'text-white'}`}
+                className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === "close" ? "text-[#FFFF55] scale-105" : "text-white"}`}
                 style={{
-                  backgroundImage: modalFocus === 'close' ? "url('/images/button_highlighted.png')" : "url('/images/Button_Background.png')",
-                  backgroundSize: '100% 100%',
-                  imageRendering: 'pixelated',
+                  backgroundImage:
+                    modalFocus === "close"
+                      ? "url('/images/button_highlighted.png')"
+                      : "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
                 }}
               >
                 BACK
@@ -705,7 +1392,10 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
         {showInstall && (
           <InstallModal
             pkg={pkg}
-            onClose={() => { setShowInstall(false); onInstallComplete(); }}
+            onClose={() => {
+              setShowInstall(false);
+              onInstallComplete();
+            }}
             playPressSound={playPressSound}
           />
         )}
@@ -715,7 +1405,10 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
           <UninstallModal
             pkg={pkg}
             installedEntries={installedEntries}
-            onClose={() => { setShowUninstall(false); onUninstallComplete(); }}
+            onClose={() => {
+              setShowUninstall(false);
+              onUninstallComplete();
+            }}
             playPressSound={playPressSound}
             isVersionTab={isVersionTab}
           />
@@ -725,56 +1418,69 @@ function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstal
   );
 }
 
-function InstallModal({ pkg, onClose, playPressSound }: {
+function InstallModal({
+  pkg,
+  onClose,
+  playPressSound,
+}: {
   pkg: RegistryPackage;
   onClose: () => void;
   playPressSound: () => void;
 }) {
   const game = useContext(GameContext);
-  const availableEditions = game?.editions.filter(e => game.installs.includes(e.id)) || [];
+  const availableEditions =
+    game?.editions.filter((e) => game.installs.includes(e.id)) || [];
   const [focusedIdx, setFocusedIdx] = useState(0);
-  const [status, setStatus] = useState<'idle' | 'installing' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<
+    "idle" | "installing" | "success" | "error"
+  >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       e.stopPropagation();
-      if (status === 'installing') return;
-      if (status === 'success') {
-        if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Enter') onClose();
+      if (status === "installing") return;
+      if (status === "success") {
+        if (e.key === "Escape" || e.key === "Backspace" || e.key === "Enter")
+          onClose();
         return;
       }
 
-      if (e.key === 'Escape' || e.key === 'Backspace') {
+      if (e.key === "Escape" || e.key === "Backspace") {
         onClose();
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
         playPressSound();
         setFocusedIdx((p) => Math.max(p - 1, 0));
-      } else if (e.key === 'ArrowDown') {
+      } else if (e.key === "ArrowDown") {
         e.preventDefault();
         playPressSound();
         setFocusedIdx((p) => Math.min(p + 1, availableEditions.length - 1));
-      } else if (e.key === 'Enter') {
+      } else if (e.key === "Enter") {
         if (availableEditions.length > 0) {
           installTo(availableEditions[focusedIdx].id);
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [availableEditions, focusedIdx, status, onClose, playPressSound]);
 
   const installTo = async (instanceId: string) => {
-    setStatus('installing');
+    setStatus("installing");
     setErrorMsg(null);
     playPressSound();
     try {
-      await TauriService.workshopInstall(instanceId, pkg.id, pkg.zips!, pkg.version);
-      setStatus('success');
+      await TauriService.workshopInstall(
+        instanceId,
+        pkg.id,
+        pkg.zips!,
+        pkg.version,
+      );
+      setStatus("success");
     } catch (e: any) {
       console.error(e);
-      setStatus('error');
-      setErrorMsg(typeof e === 'string' ? e : e.message);
+      setStatus("error");
+      setErrorMsg(typeof e === "string" ? e : e.message);
     }
   };
 
@@ -784,7 +1490,7 @@ function InstallModal({ pkg, onClose, playPressSound }: {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80"
-      onClick={status !== 'installing' ? onClose : undefined}
+      onClick={status !== "installing" ? onClose : undefined}
     >
       <motion.div
         initial={{ y: 20, opacity: 0 }}
@@ -795,46 +1501,68 @@ function InstallModal({ pkg, onClose, playPressSound }: {
         className="flex flex-col w-[520px] font-['Mojangles'] text-white border-2 border-[#555] rounded-sm overflow-hidden"
         style={{
           backgroundImage: "url('/images/frame_background.png')",
-          backgroundSize: '100% 100%',
-          imageRendering: 'pixelated',
+          backgroundSize: "100% 100%",
+          imageRendering: "pixelated",
         }}
       >
         <div className="p-6 border-b border-[#555] bg-black/60">
-          <span className="text-2xl mc-text-shadow block font-bold tracking-wide">INSTALL CONTENT</span>
-          <span className="text-sm text-[#A0A0A0] mc-text-shadow uppercase tracking-widest opacity-80 mt-1">Target Edition for "{pkg.name}"</span>
+          <span className="text-2xl mc-text-shadow block font-bold tracking-wide">
+            INSTALL CONTENT
+          </span>
+          <span className="text-sm text-[#A0A0A0] mc-text-shadow uppercase tracking-widest opacity-80 mt-1">
+            Target Edition for "{pkg.name}"
+          </span>
         </div>
 
         <div className="p-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto">
-          {status === 'installing' && (
+          {status === "installing" && (
             <div className="py-8 flex flex-col items-center justify-center gap-3">
-              <span className="text-2xl text-[#FFFF55] mc-text-shadow animate-pulse">Installing...</span>
-              <span className="text-xs text-[#A0A0A0] mc-text-shadow">Downloading and extracting assets</span>
+              <span className="text-2xl text-[#FFFF55] mc-text-shadow animate-pulse">
+                Installing...
+              </span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow">
+                Downloading and extracting assets
+              </span>
             </div>
           )}
-          {status === 'success' && (
+          {status === "success" && (
             <div className="py-8 flex flex-col items-center justify-center gap-3">
-              <span className="text-2xl text-[#55FF55] mc-text-shadow">Installed Successfully!</span>
-              <span className="text-xs text-[#A0A0A0] mc-text-shadow">Press any key or click to continue</span>
+              <span className="text-2xl text-[#55FF55] mc-text-shadow">
+                Installed Successfully!
+              </span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow">
+                Press any key or click to continue
+              </span>
             </div>
           )}
-          {status === 'error' && (
+          {status === "error" && (
             <div className="py-6 flex flex-col items-center justify-center gap-3">
-              <span className="text-xl text-[#FF5555] mc-text-shadow">Installation Failed</span>
-              <span className="text-xs text-[#A0A0A0] mc-text-shadow text-center">{errorMsg}</span>
+              <span className="text-xl text-[#FF5555] mc-text-shadow">
+                Installation Failed
+              </span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow text-center">
+                {errorMsg}
+              </span>
               <button
-                onClick={() => setStatus('idle')}
+                onClick={() => setStatus("idle")}
                 className="mt-2 w-32 h-9 flex items-center justify-center text-sm mc-text-shadow text-white cursor-pointer"
-                style={{ backgroundImage: "url('/images/Button_Background.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
               >
                 Retry
               </button>
             </div>
           )}
 
-          {status === 'idle' && (
-            availableEditions.length === 0 ? (
+          {status === "idle" &&
+            (availableEditions.length === 0 ? (
               <div className="py-6 flex items-center justify-center">
-                <span className="text-[#FF5555] mc-text-shadow">No installed editions found</span>
+                <span className="text-[#FF5555] mc-text-shadow">
+                  No installed editions found
+                </span>
               </div>
             ) : (
               availableEditions.map((ed, i) => (
@@ -842,20 +1570,29 @@ function InstallModal({ pkg, onClose, playPressSound }: {
                   key={ed.id}
                   onClick={() => installTo(ed.id)}
                   onMouseEnter={() => setFocusedIdx(i)}
-                  className={`flex flex-col p-3 cursor-pointer border-2 transition-none ${focusedIdx === i ? 'border-[#FFFF55] bg-black/40' : 'border-[#444] bg-black/20'}`}
+                  className={`flex flex-col p-3 cursor-pointer border-2 transition-none ${focusedIdx === i ? "border-[#FFFF55] bg-black/40" : "border-[#444] bg-black/20"}`}
                 >
-                  <span className={`text-lg mc-text-shadow ${focusedIdx === i ? 'text-[#FFFF55]' : 'text-white'}`}>{ed.name}</span>
+                  <span
+                    className={`text-lg mc-text-shadow ${focusedIdx === i ? "text-[#FFFF55]" : "text-white"}`}
+                  >
+                    {ed.name}
+                  </span>
                 </div>
               ))
-            )
-          )}
+            ))}
         </div>
       </motion.div>
     </motion.div>
   );
 }
 
-function UninstallModal({ pkg, installedEntries, onClose, playPressSound, isVersionTab }: {
+function UninstallModal({
+  pkg,
+  installedEntries,
+  onClose,
+  playPressSound,
+  isVersionTab,
+}: {
   pkg: RegistryPackage;
   installedEntries: InstalledWorkshopPackage[];
   onClose: () => void;
@@ -865,44 +1602,47 @@ function UninstallModal({ pkg, installedEntries, onClose, playPressSound, isVers
   const { deleteCustomEdition } = useGame();
   const game = useContext(GameContext);
   const [focusedIdx, setFocusedIdx] = useState(0);
-  const [status, setStatus] = useState<'idle' | 'removing' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<
+    "idle" | "removing" | "success" | "error"
+  >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const editionName = (instanceId: string) => {
-    const ed = game?.editions.find(e => e.id === instanceId);
+    const ed = game?.editions.find((e) => e.id === instanceId);
     return ed?.name ?? instanceId;
   };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       e.stopPropagation();
-      if (status === 'removing') return;
-      if (status === 'success') {
-        if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Enter') onClose();
+      if (status === "removing") return;
+      if (status === "success") {
+        if (e.key === "Escape" || e.key === "Backspace" || e.key === "Enter")
+          onClose();
         return;
       }
 
-      if (e.key === 'Escape' || e.key === 'Backspace') {
+      if (e.key === "Escape" || e.key === "Backspace") {
         onClose();
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
         playPressSound();
         setFocusedIdx((p) => Math.max(p - 1, 0));
-      } else if (e.key === 'ArrowDown') {
+      } else if (e.key === "ArrowDown") {
         e.preventDefault();
         playPressSound();
         setFocusedIdx((p) => Math.min(p + 1, installedEntries.length - 1));
-      } else if (e.key === 'Enter') {
+      } else if (e.key === "Enter") {
         if (installedEntries.length > 0) {
           uninstallFrom(installedEntries[focusedIdx].instanceId);
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [installedEntries, focusedIdx, status, onClose, playPressSound]);
 
   const uninstallFrom = async (instanceId: string) => {
-    setStatus('removing');
+    setStatus("removing");
     setErrorMsg(null);
     playPressSound();
     try {
@@ -911,11 +1651,11 @@ function UninstallModal({ pkg, installedEntries, onClose, playPressSound, isVers
       } else {
         await TauriService.workshopUninstall(instanceId, pkg.id);
       }
-      setStatus('success');
+      setStatus("success");
     } catch (e: any) {
       console.error(e);
-      setStatus('error');
-      setErrorMsg(typeof e === 'string' ? e : e.message);
+      setStatus("error");
+      setErrorMsg(typeof e === "string" ? e : e.message);
     }
   };
 
@@ -925,7 +1665,7 @@ function UninstallModal({ pkg, installedEntries, onClose, playPressSound, isVers
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80"
-      onClick={status !== 'removing' ? onClose : undefined}
+      onClick={status !== "removing" ? onClose : undefined}
     >
       <motion.div
         initial={{ y: 20, opacity: 0 }}
@@ -936,53 +1676,80 @@ function UninstallModal({ pkg, installedEntries, onClose, playPressSound, isVers
         className="flex flex-col w-[520px] font-['Mojangles'] text-white border-2 border-[#555] rounded-sm overflow-hidden"
         style={{
           backgroundImage: "url('/images/frame_background.png')",
-          backgroundSize: '100% 100%',
-          imageRendering: 'pixelated',
+          backgroundSize: "100% 100%",
+          imageRendering: "pixelated",
         }}
       >
         <div className="p-6 border-b border-[#555] bg-black/60">
-          <span className="text-2xl mc-text-shadow block font-bold tracking-wide text-[#FF5555]">REMOVE CONTENT</span>
-          <span className="text-sm text-[#A0A0A0] mc-text-shadow uppercase tracking-widest opacity-80 mt-1">Select edition to remove "{pkg.name}"</span>
+          <span className="text-2xl mc-text-shadow block font-bold tracking-wide text-[#FF5555]">
+            REMOVE CONTENT
+          </span>
+          <span className="text-sm text-[#A0A0A0] mc-text-shadow uppercase tracking-widest opacity-80 mt-1">
+            Select edition to remove "{pkg.name}"
+          </span>
         </div>
 
         <div className="p-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto">
-          {status === 'removing' && (
+          {status === "removing" && (
             <div className="py-8 flex flex-col items-center justify-center gap-3">
-              <span className="text-2xl text-[#FF5555] mc-text-shadow animate-pulse">Removing...</span>
-              <span className="text-xs text-[#A0A0A0] mc-text-shadow">Deleting installed files</span>
+              <span className="text-2xl text-[#FF5555] mc-text-shadow animate-pulse">
+                Removing...
+              </span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow">
+                Deleting installed files
+              </span>
             </div>
           )}
-          {status === 'success' && (
+          {status === "success" && (
             <div className="py-8 flex flex-col items-center justify-center gap-3">
-              <span className="text-2xl text-[#55FF55] mc-text-shadow">Removed Successfully!</span>
-              <span className="text-xs text-[#A0A0A0] mc-text-shadow">Press any key or click to continue</span>
+              <span className="text-2xl text-[#55FF55] mc-text-shadow">
+                Removed Successfully!
+              </span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow">
+                Press any key or click to continue
+              </span>
             </div>
           )}
-          {status === 'error' && (
+          {status === "error" && (
             <div className="py-6 flex flex-col items-center justify-center gap-3">
-              <span className="text-xl text-[#FF5555] mc-text-shadow">Removal Failed</span>
-              <span className="text-xs text-[#A0A0A0] mc-text-shadow text-center">{errorMsg}</span>
+              <span className="text-xl text-[#FF5555] mc-text-shadow">
+                Removal Failed
+              </span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow text-center">
+                {errorMsg}
+              </span>
               <button
-                onClick={() => setStatus('idle')}
+                onClick={() => setStatus("idle")}
                 className="mt-2 w-32 h-9 flex items-center justify-center text-sm mc-text-shadow text-white cursor-pointer"
-                style={{ backgroundImage: "url('/images/Button_Background.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
               >
                 Retry
               </button>
             </div>
           )}
 
-          {status === 'idle' && installedEntries.map((entry, i) => (
-            <div
-              key={entry.instanceId}
-              onClick={() => uninstallFrom(entry.instanceId)}
-              onMouseEnter={() => setFocusedIdx(i)}
-              className={`flex items-center justify-between p-3 cursor-pointer border-2 transition-none ${focusedIdx === i ? 'border-[#FF5555] bg-black/40' : 'border-[#444] bg-black/20'}`}
-            >
-              <span className={`text-lg mc-text-shadow ${focusedIdx === i ? 'text-[#FF5555]' : 'text-white'}`}>{editionName(entry.instanceId)}</span>
-              <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-widest">v{entry.version}</span>
-            </div>
-          ))}
+          {status === "idle" &&
+            installedEntries.map((entry, i) => (
+              <div
+                key={entry.instanceId}
+                onClick={() => uninstallFrom(entry.instanceId)}
+                onMouseEnter={() => setFocusedIdx(i)}
+                className={`flex items-center justify-between p-3 cursor-pointer border-2 transition-none ${focusedIdx === i ? "border-[#FF5555] bg-black/40" : "border-[#444] bg-black/20"}`}
+              >
+                <span
+                  className={`text-lg mc-text-shadow ${focusedIdx === i ? "text-[#FF5555]" : "text-white"}`}
+                >
+                  {editionName(entry.instanceId)}
+                </span>
+                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-widest">
+                  v{entry.version}
+                </span>
+              </div>
+            ))}
         </div>
       </motion.div>
     </motion.div>

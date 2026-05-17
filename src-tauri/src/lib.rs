@@ -63,6 +63,7 @@ pub struct AppConfig {
     pub sfx_vol: Option<u32>,
     pub legacy_mode: Option<bool>,
     pub mangohud_enabled: Option<bool>,
+    pub saved_servers: Option<Vec<McServer>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -266,6 +267,7 @@ fn load_config(app: AppHandle) -> AppConfig {
         sfx_vol: Some(100),
         legacy_mode: Some(false),
         mangohud_enabled: None,
+        saved_servers: None,
     }
 }
 
@@ -1344,6 +1346,13 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
     let lce_live = McServer { name: "LCELive Game".into(), ip: "127.0.0.1".into(), port: 61000 };
     if !servers.iter().any(|s| s.ip == lce_live.ip && s.port == lce_live.port) {
         servers.push(lce_live);
+    }
+    if let Some(ref saved) = config.saved_servers {
+        for s in saved {
+            if !servers.iter().any(|existing| existing.ip == s.ip && existing.port == s.port) {
+                servers.push(s.clone());
+            }
+        }
     }
     ensure_server_list(&working_dir, servers);
     let game_exe = working_dir.join("Minecraft.Client.exe");

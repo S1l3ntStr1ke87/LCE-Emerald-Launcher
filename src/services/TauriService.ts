@@ -40,6 +40,7 @@ export interface AppConfig {
   sfxVol?: number;
   legacyMode?: boolean;
   mangohudEnabled?: boolean;
+  savedServers?: McServer[];
 }
 
 export interface ThemePalette {
