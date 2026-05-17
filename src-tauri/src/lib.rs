@@ -933,6 +933,65 @@ async fn download_and_install(app: AppHandle, state: State<'_, DownloadState>, u
     Ok("Success".into())
 }
 
+fn ensure_server_list(instance_dir: &PathBuf, servers: Vec<McServer>) {
+    let servers_db = instance_dir.join("servers.db");
+    let mut all_servers = Vec::new();
+    if let Ok(content) = fs::read(&servers_db) {
+        if content.len() >= 12 && &content[0..4] == b"MCSV" {
+            let count = u32::from_le_bytes(content[8..12].try_into().unwrap_or([0; 4]));
+            let mut pos = 12;
+            for _ in 0..count {
+                if pos + 2 > content.len() { break; }
+                let ip_len = u16::from_le_bytes(content[pos..pos+2].try_into().unwrap_or([0; 2])) as usize;
+                pos += 2;
+                if pos + ip_len > content.len() { break; }
+                let ip = String::from_utf8_lossy(&content[pos..pos+ip_len]).to_string();
+                pos += ip_len;
+                if pos + 2 > content.len() { break; }
+                let port = u16::from_le_bytes(content[pos..pos+2].try_into().unwrap_or([0; 2]));
+                pos += 2;
+                if pos + 2 > content.len() { break; }
+                let name_len = u16::from_le_bytes(content[pos..pos+2].try_into().unwrap_or([0; 2])) as usize;
+                pos += 2;
+                if pos + name_len > content.len() { break; }
+                let name = String::from_utf8_lossy(&content[pos..pos+name_len]).to_string();
+                pos += name_len;
+
+                all_servers.push(McServer { name, ip, port });
+            }
+        }
+    }
+
+    for s in servers {
+        all_servers.push(s);
+    }
+
+    let mut unique_servers = Vec::new();
+    let mut seen: std::collections::HashSet<(String, u16)> = std::collections::HashSet::new();
+    for s in all_servers {
+        let key = (s.ip.clone(), s.port);
+        if seen.insert(key) {
+            unique_servers.push(s);
+        }
+    }
+
+    let mut file_content = Vec::new();
+    file_content.extend_from_slice(b"MCSV");
+    file_content.extend_from_slice(&1u32.to_le_bytes());
+    file_content.extend_from_slice(&(unique_servers.len() as u32).to_le_bytes());
+    for server in unique_servers {
+        let ip_bytes = server.ip.as_bytes();
+        let name_bytes = server.name.as_bytes();
+        file_content.extend_from_slice(&(ip_bytes.len() as u16).to_le_bytes());
+        file_content.extend_from_slice(ip_bytes);
+        file_content.extend_from_slice(&server.port.to_le_bytes());
+        file_content.extend_from_slice(&(name_bytes.len() as u16).to_le_bytes());
+        file_content.extend_from_slice(name_bytes);
+    }
+    let _ = fs::create_dir_all(instance_dir);
+    let _ = fs::write(&servers_db, file_content);
+}
+
 fn perform_dlc_sync(app: &AppHandle, instance_dir: &PathBuf) -> Result<(), String> {
     let mut dlc_src = None;
     let root = get_app_dir(app);
@@ -1286,6 +1345,7 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
     if !servers.iter().any(|s| s.ip == lce_live.ip && s.port == lce_live.port) {
         servers.push(lce_live);
     }
+    ensure_server_list(&working_dir, servers);
     let game_exe = working_dir.join("Minecraft.Client.exe");
     if !game_exe.exists() {
         return Err("Game executable not found in instance folder.".into());
