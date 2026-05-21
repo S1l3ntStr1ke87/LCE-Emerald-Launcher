@@ -1342,7 +1342,7 @@ async fn check_game_update(app: AppHandle, instance_id: String, url: String) -> 
 
 #[tauri::command]
 #[allow(non_snake_case)]
-async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: String, mut servers: Vec<McServer>, game_args: Vec<String>) -> Result<(), String> {
+async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: String, mut servers: Vec<McServer>, extra_args: Vec<String>) -> Result<(), String> {
     perform_instance_sync(&app, &instance_id).await?;
     let working_dir = get_instance_working_dir(&app, &instance_id);
     let config = load_config(app.clone());
@@ -1387,14 +1387,14 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
                 };
 
                 let mangohud = config.mangohud_enabled.unwrap_or(false);
-                let (prog, extra_args): (&str, &[&str]) = if mangohud {
+                let (prog, runner_args): (&str, &[&str]) = if mangohud {
                     ("mangohud", &[&program])
                 } else {
                     (&program, &[])
                 };
 
                 let mut cmd = tokio::process::Command::new(prog);
-                for a in extra_args {
+                for a in runner_args {
                     cmd.arg(a);
                 }
                 for a in &args {
@@ -1423,7 +1423,7 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
                 }
 
                 cmd.arg(&game_exe);
-                for a in &game_args {
+                for a in &extra_args {
                     cmd.arg(a);
                 }
                 cmd.current_dir(&working_dir);
