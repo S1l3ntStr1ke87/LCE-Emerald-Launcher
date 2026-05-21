@@ -1342,7 +1342,7 @@ async fn check_game_update(app: AppHandle, instance_id: String, url: String) -> 
 
 #[tauri::command]
 #[allow(non_snake_case)]
-async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: String, mut servers: Vec<McServer>) -> Result<(), String> {
+async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: String, mut servers: Vec<McServer>, game_args: Vec<String>) -> Result<(), String> {
     perform_instance_sync(&app, &instance_id).await?;
     let working_dir = get_instance_working_dir(&app, &instance_id);
     let config = load_config(app.clone());
@@ -1422,8 +1422,11 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
                     cmd.env_remove("QT_PLUGIN_PATH");
                 }
 
-                cmd.arg(&game_exe)
-                   .current_dir(&working_dir);
+                cmd.arg(&game_exe);
+                for a in &game_args {
+                    cmd.arg(a);
+                }
+                cmd.current_dir(&working_dir);
 
                 let child = cmd.spawn().map_err(|e| e.to_string())?;
                 {
@@ -1492,6 +1495,9 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
                 c.arg(&game_exe);
                 c
             };
+            for a in &game_args {
+                cmd.arg(a);
+            }
 
             #[cfg(unix)]
             cmd.process_group(0);
@@ -1559,6 +1565,9 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
         #[cfg(all(not(target_os = "macos"), not(target_os = "linux")))]
         {
             let mut cmd = tokio::process::Command::new(&game_exe);
+            for a in &game_args {
+                cmd.arg(a);
+            }
             #[cfg(unix)]
             cmd.process_group(0);
             cmd.current_dir(&working_dir);
@@ -2462,7 +2471,7 @@ async fn join_game(
         port: host_port,
     };
 
-    launch_game(app, game_state, instance_id, vec![server]).await
+    launch_game(app, game_state, instance_id, vec![server], vec![]).await
 }
 
 #[tauri::command]
@@ -2492,7 +2501,7 @@ pub fn run() {
                         let _ = window.hide();
                     }
                     let state = app_handle.state::<GameState>();
-                    match launch_game(app_handle.clone(), state, instance_id, Vec::new()).await {
+                    match launch_game(app_handle.clone(), state, instance_id, Vec::new(), vec![]).await {
                         Ok(_) => { app_handle.exit(0); }
                         Err(e) => {
                             eprintln!("Auto-launch error: {}", e);

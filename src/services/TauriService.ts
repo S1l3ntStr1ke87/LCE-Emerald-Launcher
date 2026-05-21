@@ -123,8 +123,9 @@ export class TauriService {
   static async launchGame(
     instanceId: string,
     servers: McServer[],
+    extraArgs?: string[],
   ): Promise<void> {
-    return invoke("launch_game", { instanceId, servers });
+    return invoke("launch_game", { instanceId, servers, extraArgs: extraArgs ?? [] });
   }
 
   static async stopGame(instanceId: string): Promise<void> {

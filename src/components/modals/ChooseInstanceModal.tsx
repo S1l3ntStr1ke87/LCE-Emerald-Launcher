@@ -64,9 +64,11 @@ export default function ChooseInstanceModal({
         const accessToken = lceLiveService.accessToken ?? "";
         await TauriService.startRelayProxy(baseUrl, accessToken, sessionId);
         setStatus("Launching game...");
-        await TauriService.launchGame(selectedInstance, [
-          { name: invite.hostName || "LCELive Game", ip: "127.0.0.1", port: 61000 }
-        ]);
+        await TauriService.launchGame(
+          selectedInstance,
+          [{ name: invite.hostName || "LCELive Game", ip: "127.0.0.1", port: 61000 }],
+          ["-ip", "127.0.0.1", "-port", "61000", "-quitondisconnect"]
+        );
       } else {
         setStatus("Launching game...");
         await TauriService.stopAllProxies();
