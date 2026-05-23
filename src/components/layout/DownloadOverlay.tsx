@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { memo } from "react";
+import type { Edition } from "../../types/edition";
 
 interface DownloadOverlayProps {
   downloadProgress: number | null;
   downloadingId: string | null;
-  editions: any[];
+  editions: Edition[];
 }
 
 export const DownloadOverlay = memo(function DownloadOverlay({ downloadProgress, downloadingId, editions }: DownloadOverlayProps) {

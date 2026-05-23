@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useConfig } from '../../context/LauncherContext';
 
+type UVSet = Record<string, number[]>;
+
 interface SkinViewerProps {
   username: string;
   setUsername: (name: string) => void;
@@ -60,10 +62,10 @@ const SkinViewer = memo(function SkinViewer({ username, setUsername, playPressSo
         return new THREE.MeshLambertMaterial({ map: matTex, transparent: true, alphaTest: 0.5, side: THREE.FrontSide });
       };
 
-      const createPart = (w: number, h: number, d: number, uv: any, overlayUv?: any, swapMats = false, isLegacyMirror = false) => {
+      const createPart = (w: number, h: number, d: number, uv: UVSet, overlayUv?: UVSet, swapMats = false, isLegacyMirror = false) => {
         const group = new THREE.Group();
         const geo = new THREE.BoxGeometry(w, h, d);
-        const getMats = (uvSet: any) => {
+        const getMats = (uvSet: UVSet) => {
           const flipX = isLegacyMirror;
           return [
             createFaceMaterial(swapMats ? uvSet.right[0] : uvSet.left[0], uvSet.left[1], uvSet.left[2], uvSet.left[3], flipX),     // +x (L)

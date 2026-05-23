@@ -20,6 +20,7 @@ import {
 import {
   TauriService,
   InstalledWorkshopPackage,
+  type CustomEdition,
 } from "../../services/TauriService";
 const REGISTRY_URL =
   "https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/registry.json";
@@ -224,7 +225,7 @@ const WorkshopView = memo(function WorkshopView() {
     (pkgId: string) => {
       if (activeTab === "Versions") {
         const isAdded = config.customEditions?.some(
-          (e: any) =>
+          (e: CustomEdition) =>
             e.id === pkgId ||
             e.url === versionPackages.find((p) => p.id === pkgId)?.url,
         );
@@ -252,7 +253,7 @@ const WorkshopView = memo(function WorkshopView() {
       if (activeTab === "Versions") {
         return (
           config.customEditions?.some(
-            (e: any) =>
+            (e: CustomEdition) =>
               e.id === pkgId ||
               e.url === versionPackages.find((p) => p.id === pkgId)?.url,
           ) ?? false
@@ -1471,10 +1472,10 @@ function InstallModal({
         pkg.version,
       );
       setStatus("success");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       setStatus("error");
-      setErrorMsg(typeof e === "string" ? e : e.message);
+      setErrorMsg(e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error");
     }
   };
 
@@ -1646,10 +1647,10 @@ function UninstallModal({
         await TauriService.workshopUninstall(instanceId, pkg.id);
       }
       setStatus("success");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       setStatus("error");
-      setErrorMsg(typeof e === "string" ? e : e.message);
+      setErrorMsg(e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error");
     }
   };
 

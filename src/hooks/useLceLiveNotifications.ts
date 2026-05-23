@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { lceLiveService } from "../services/LceLiveService";
+import { lceLiveService, type FriendRequest, type GameInvite } from "../services/LceLiveService";
 export function useLceLiveNotifications() {
   const [friendRequestMessage, setFriendRequestMessage] = useState<string | null>(null);
   const [gameInviteMessage, setGameInviteMessage] = useState<string | null>(null);
   const seenRequests = useRef<Set<string>>(new Set());
   const seenInvites = useRef<Set<string>>(new Set());
   useEffect(() => {
-    let pollInterval: any;
+    let pollInterval: ReturnType<typeof setInterval>;
     const init = async () => {
       if (lceLiveService.signedIn) {
         try {
@@ -20,8 +20,8 @@ export function useLceLiveNotifications() {
             lceLiveService.getPendingRequests(),
             lceLiveService.getGameInvites()
           ]);
-          reqs.incoming.forEach((r: any) => seenRequests.current.add(r.accountId));
-          invs.filter((i: any) => i.status === "pending").forEach((i: any) => seenInvites.current.add(i.inviteId));
+          reqs.incoming.forEach((r: FriendRequest) => seenRequests.current.add(r.accountId));
+          invs.filter((i: GameInvite) => i.status === "pending").forEach((i: GameInvite) => seenInvites.current.add(i.inviteId));
         } catch (e) { }
       }
 
@@ -33,14 +33,14 @@ export function useLceLiveNotifications() {
             lceLiveService.getGameInvites()
           ]);
 
-          reqs.incoming.forEach((r: any) => {
+          reqs.incoming.forEach((r: FriendRequest) => {
             if (!seenRequests.current.has(r.accountId)) {
               seenRequests.current.add(r.accountId);
               setFriendRequestMessage(`New request from ${r.displayName}`);
             }
           });
 
-          invs.filter((i: any) => i.status === "pending").forEach((i: any) => {
+          invs.filter((i: GameInvite) => i.status === "pending").forEach((i: GameInvite) => {
             if (!seenInvites.current.has(i.inviteId)) {
               seenInvites.current.add(i.inviteId);
               const fromName = typeof i.from === 'string' ? "Unknown" : i.from.displayName;

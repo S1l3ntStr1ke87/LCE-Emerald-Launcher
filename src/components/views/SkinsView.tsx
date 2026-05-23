@@ -165,9 +165,9 @@ const SkinsView = memo(function SkinsView() {
         const skinBase64 = `data:image/png;base64,${base64Raw}`;
         processSkinImage(skinBase64, exactName.substring(0, 16));
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       setImportError(
-        typeof e === "string" ? e : e.message || "Failed to fetch",
+        e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to fetch",
       );
     } finally {
       setIsImporting(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TauriService } from "../../services/TauriService";
+import type { Edition } from "../../types/edition";
 
 export default function SetUidModal({
   isOpen,
@@ -10,7 +11,15 @@ export default function SetUidModal({
   instances,
   installedVersions,
   targetInstanceId,
-}: any) {
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  playPressSound: (s?: string) => void;
+  playBackSound: (s?: string) => void;
+  instances: Edition[];
+  installedVersions: string[];
+  targetInstanceId: string;
+}) {
   const [mode, setMode] = useState<"manual" | "copy">("manual");
   const [uid, setUid] = useState("0xFF02F0C87E8AC1F2");
   const [selectedInstance, setSelectedInstance] = useState("");
@@ -44,7 +53,7 @@ export default function SetUidModal({
     }
   }, [isOpen, targetInstanceId]);
 
-  const validInstances = instances.filter((i: any) => installedVersions.includes(i.instanceId) && i.instanceId !== targetInstanceId);
+  const validInstances = instances.filter((i: Edition) => installedVersions.includes(i.instanceId) && i.instanceId !== targetInstanceId);
   const handleSave = async () => {
     playPressSound("save_click.wav");
     try {
@@ -74,8 +83,8 @@ export default function SetUidModal({
       await TauriService.writeBinaryFile(`${targetPath}/uid.dat`, encodedUid);
 
       onClose();
-    } catch (e: any) {
-      setError(e.toString());
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -198,7 +207,7 @@ export default function SetUidModal({
                 <span className="truncate">
                   {selectedInstance
                     ? (() => {
-                      const i = validInstances.find((inst: any) => inst.instanceId === selectedInstance);
+                      const i = validInstances.find((inst: Edition) => inst.instanceId === selectedInstance);
                       return i ? `${i.name} ${i.selectedBranch ? `(${i.selectedBranch})` : ""}` : "-- Select an Instance --";
                     })()
                     : "-- Select an Instance --"}
@@ -208,7 +217,7 @@ export default function SetUidModal({
 
               {isDropdownOpen && validInstances.length > 0 && (
                 <div className="absolute top-[60px] left-0 w-full max-h-40 overflow-y-auto bg-black/90 border-2 border-[#373737] z-50 flex flex-col custom-scrollbar shadow-xl" style={{ imageRendering: "pixelated" }}>
-                  {validInstances.map((i: any) => (
+                  {validInstances.map((i: Edition) => (
                     <div
                       key={i.instanceId}
                       onClick={() => {

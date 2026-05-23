@@ -47,9 +47,9 @@ export default function ColEditorView() {
       const parsedCol = ColService.readCOL(buffer);
       setCol(parsedCol);
       showNotification(`Loaded ${file.name}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to parse COL", err);
-      showNotification(err.message || "Failed to parse COL", "error");
+      showNotification(err instanceof Error ? err.message : "Failed to parse COL", "error");
     }
     e.target.value = "";
   };
@@ -67,9 +67,9 @@ export default function ColEditorView() {
       a.click();
       URL.revokeObjectURL(url);
       showNotification("COL Saved Successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save COL", err);
-      showNotification(err.message || "Failed to save COL", "error");
+      showNotification(err instanceof Error ? err.message : "Failed to save COL", "error");
     }
   };
 

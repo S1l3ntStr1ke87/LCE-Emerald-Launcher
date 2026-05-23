@@ -227,7 +227,7 @@ const SettingsView = memo(function SettingsView() {
         label: string;
         type: "slider";
         value: number;
-        onChange: (val: any) => void;
+        onChange: (val: number) => void;
       }
     | {
         id: string;
@@ -474,7 +474,8 @@ const SettingsView = memo(function SettingsView() {
         const item = settingsItems[focusIndex];
         if (item.type === "slider") {
           const delta = e.key === "ArrowRight" ? 5 : -5;
-          item.onChange((v: number) => Math.max(0, Math.min(100, v + delta)));
+          const newVal = Math.max(0, Math.min(100, item.value + delta));
+          item.onChange(newVal);
         }
       } else if (e.key === "Enter" && focusIndex !== null) {
         const item = settingsItems[focusIndex];
@@ -583,8 +584,8 @@ const SettingsView = memo(function SettingsView() {
               );
             }
 
-            const isRed = (item as any).color === "red";
-            const isSmall = (item as any).small;
+            const isRed = ("color" in item && (item as { color: string }).color === "red");
+            const isSmall = "small" in item && (item as { small: boolean }).small;
 
             return (
               <button
@@ -651,8 +652,8 @@ const SettingsView = memo(function SettingsView() {
                 );
               }
 
-              const isRed = (item as any).color === "red";
-              const isSmall = (item as any).small;
+              const isRed = item.type === "button" && item.color === "red";
+              const isSmall = item.type === "button" && !!item.small;
               const isToggle = isToggleOption(item.label);
               const toggleState = isToggle ? getToggleState(item.label) : false;
 

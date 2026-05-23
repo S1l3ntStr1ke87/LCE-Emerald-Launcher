@@ -41,7 +41,15 @@ export default function CustomTUModal({
   playBackSound,
   editingEdition = null,
   initialPath = "",
-}: any) {
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onImport: (ed: { name: string; desc: string; url: string; path?: string }) => void;
+  playPressSound: (sound?: string) => void;
+  playBackSound: (sound?: string) => void;
+  editingEdition?: { name: string; desc: string; url: string; path?: string } | null;
+  initialPath?: string;
+}) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [url, setUrl] = useState("");

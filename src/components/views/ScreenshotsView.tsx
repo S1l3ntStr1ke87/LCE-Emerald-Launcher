@@ -6,6 +6,7 @@ import {
   useGame,
   useConfig,
 } from "../../context/LauncherContext";
+import type { Edition } from "../../types/edition";
 import {
   ScreenshotService,
   ScreenshotInfo,
@@ -147,7 +148,7 @@ const ScreenshotsView = memo(function ScreenshotsView() {
   }, [gridFocusIndex, selectedScreenshot]);
 
   const getEditionLogo = (instanceId: string) => {
-    const edition = editions.find((e: any) => e.id === instanceId);
+    const edition = editions.find((e: Edition) => e.id === instanceId);
     return edition?.logo || edition?.titleImage;
   };
 

@@ -122,13 +122,13 @@ export class LceLiveService {
     }
   }
 
-  private async request(
+  private async request<T = any>(
     method: string,
     path: string,
-    body?: any,
+    body?: unknown,
     authed: boolean = true,
     retryCount: number = 0,
-  ): Promise<any> {
+  ): Promise<T> {
     if (authed && this._session?.refreshToken && retryCount === 0) {
       try {
         await this.refreshSession(); //neo: i do this on every request only because it doesnt always return 401
@@ -198,7 +198,7 @@ export class LceLiveService {
   }
 
   async startDeviceLink(): Promise<DeviceLinkStartResponse> {
-    return this.request(
+    return this.request<DeviceLinkStartResponse>(
       "POST",
       "/api/auth/device/start",
       {
@@ -210,7 +210,7 @@ export class LceLiveService {
   }
 
   async pollDeviceLink(deviceCode: string): Promise<DeviceLinkPollResponse> {
-    const data = await this.request(
+    const data = await this.request<DeviceLinkPollResponse>(
       "GET",
       `/api/auth/device/poll/${deviceCode}`,
       null,
@@ -219,8 +219,8 @@ export class LceLiveService {
     if (data.isLinked && data.accessToken) {
       this._session = {
         accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        account: data.account,
+        refreshToken: data.refreshToken ?? "",
+        account: data.account ?? { accountId: "", username: "", displayName: "" },
       };
       this.saveSession();
     }
@@ -297,12 +297,12 @@ export class LceLiveService {
   async getPendingRequests(): Promise<PendingRequests> {
     const data = await this.request("GET", "/api/social/requests");
     return {
-      incoming: (data.incoming || []).map((r: any) => ({
+      incoming: (data.incoming || []).map((r: Record<string, string>) => ({
         accountId: r.requesterUserId || r.accountId || r.userId,
         username: r.requesterUsername || r.username,
         displayName: r.requesterDisplayName || r.displayName,
       })),
-      outgoing: (data.outgoing || []).map((r: any) => ({
+      outgoing: (data.outgoing || []).map((r: Record<string, string>) => ({
         accountId: r.targetUserId || r.accountId || r.userId,
         username: r.targetUsername || r.username,
         displayName: r.targetDisplayName || r.displayName,
@@ -321,7 +321,7 @@ export class LceLiveService {
   async getGameInvites(): Promise<GameInvite[]> {
     const data = await this.request("GET", "/api/sessions/invites");
     const incoming = data.incoming || [];
-    return incoming.map((inv: any) => ({
+    return incoming.map((inv: Record<string, unknown>) => ({
       inviteId: inv.inviteId,
       from: {
         accountId: inv.senderAccountId,
@@ -352,7 +352,7 @@ export class LceLiveService {
     });
   }
 
-  async acceptGameInvite(inviteId: string): Promise<any> {
+  async acceptGameInvite(inviteId: string): Promise<Record<string, unknown>> {
     return this.request("POST", `/api/sessions/invites/${inviteId}/accept`, {});
   }
 

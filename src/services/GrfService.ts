@@ -298,7 +298,7 @@ export class GrfService {
       fw.setInt32(poff, compressedSize, false); poff += 4;
     }
 
-    finalBuffer.set(bodyData as any, poff);
+    finalBuffer.set(bodyData, poff);
 
     return finalBuffer.buffer;
   }

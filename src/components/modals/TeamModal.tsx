@@ -6,7 +6,12 @@ export default function TeamModal({
   onClose,
   playPressSound,
   playSfx,
-}: any) {
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  playPressSound: () => void;
+  playSfx: (sound: string) => void;
+}) {
   const [focusIndex, setFocusIndex] = useState(0);
 
   const team = [

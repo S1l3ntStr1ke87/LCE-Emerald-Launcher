@@ -46,7 +46,7 @@ export interface AppConfig {
 export interface ThemePalette {
   id: string;
   name: string;
-  colors: any;
+  colors: Record<string, string>;
 }
 
 export interface Runner {

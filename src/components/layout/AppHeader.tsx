@@ -6,7 +6,7 @@ const appWindow = getCurrentWindow();
 
 interface AppHeaderProps {
   playPressSound: () => void;
-  uiFade: any;
+  uiFade: Record<string, unknown>;
 }
 
 export const AppHeader = memo(function AppHeader({ playPressSound, uiFade }: AppHeaderProps) {

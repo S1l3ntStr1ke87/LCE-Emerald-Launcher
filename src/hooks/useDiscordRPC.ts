@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import RpcService from "../services/RpcService";
+import type { Edition } from "../types/edition";
 interface DiscordRPCProps {
   rpcEnabled: boolean;
   showIntro: boolean;
@@ -10,7 +11,7 @@ interface DiscordRPCProps {
   isWindowVisible: boolean;
   downloadProgress: number | null;
   downloadingId: string | null;
-  editions: any[];
+  editions: Edition[];
 }
 
 export function useDiscordRPC({

@@ -71,7 +71,7 @@ export const ArcEditorView: React.FC = () => {
       }
       setSelectedEntryIdx(null);
       showNotification(`Loaded ${parsed.name}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err !== "CANCELED") {
         console.error("Failed to parse ARC", err);
         showNotification("Failed to parse ARC", "error");
@@ -96,7 +96,7 @@ export const ArcEditorView: React.FC = () => {
         setOpenedPath(targetPath);
         showNotification("ARC Saved Successfully");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err !== "CANCELED") showNotification("Save failed", "error");
     }
   };
@@ -109,7 +109,7 @@ export const ArcEditorView: React.FC = () => {
       playPressSound();
       await TauriService.writeBinaryFile(path, entry.data);
       showNotification(`Extracted: ${entry.filename}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err !== "CANCELED") showNotification("Extraction failed", "error");
     }
   };
@@ -212,7 +212,7 @@ export const ArcEditorView: React.FC = () => {
   };
 
   const treeData = useMemo(() => {
-    const root: any = { name: "<root>", children: {}, isFolder: true };
+    const root: Record<string, any> = { name: "<root>", children: {}, isFolder: true };
     filteredEntries.forEach((entry) => {
       const parts = entry.filename.split(/\//);
       let current = root;
@@ -237,7 +237,7 @@ export const ArcEditorView: React.FC = () => {
     setExpandedNodes(newExpanded);
   };
 
-  const renderTree = (node: any, path: string = "") => {
+  const renderTree = (node: Record<string, any>, path: string = "") => {
     const nodePath = path ? `${path}/${node.name}` : node.name;
     const isExpanded = expandedNodes.has(nodePath);
 
@@ -285,7 +285,7 @@ export const ArcEditorView: React.FC = () => {
               exit={{ height: 0, opacity: 0 }}
               className="ml-4 border-l border-white/10 overflow-hidden"
             >
-              {Object.values(node.children).map((child: any) => renderTree(child, nodePath))}
+              {Object.values(node.children as Record<string, any>).map((child: Record<string, any>) => renderTree(child, nodePath))}
             </motion.div>
           )}
         </AnimatePresence>
@@ -306,7 +306,7 @@ export const ArcEditorView: React.FC = () => {
         await TauriService.writeBinaryFile(`${baseFolder}/${fileName}`, entry.data);
       }
       showNotification("All Entries Exported");
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err !== "CANCELED") showNotification("Export failed", "error");
     }
   };

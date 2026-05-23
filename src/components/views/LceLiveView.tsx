@@ -11,6 +11,7 @@ import {
   LceLiveAccount,
   FriendRequest,
   GameInvite,
+  DeviceLinkStartResponse,
 } from "../../services/LceLiveService";
 import { TauriService } from "../../services/TauriService";
 import ChooseInstanceModal from "../modals/ChooseInstanceModal";
@@ -31,7 +32,7 @@ const LceLiveView = memo(function LceLiveView() {
   const [incomingReqs, setIncomingReqs] = useState<FriendRequest[]>([]);
   const [outgoingReqs, setOutgoingReqs] = useState<FriendRequest[]>([]);
   const [invites, setInvites] = useState<GameInvite[]>([]);
-  const [linkData, setLinkData] = useState<any>(null);
+  const [linkData, setLinkData] = useState<DeviceLinkStartResponse | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [isHosting, setIsHosting] = useState(false);
   const [hostStatus, setHostStatus] = useState("");
@@ -59,7 +60,7 @@ const LceLiveView = memo(function LceLiveView() {
       setIncomingReqs(reqs.incoming);
       setOutgoingReqs(reqs.outgoing);
       setInvites(invs.filter((i: GameInvite) => i.status === "pending"));
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
     }
   };
@@ -86,15 +87,15 @@ const LceLiveView = memo(function LceLiveView() {
   useEffect(() => {
     if (currentTab !== "device_link") return;
     let mounted = true;
-    let pollInterval: any = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
     const startLink = async () => {
       try {
         if (!linkData) {
           const data = await lceLiveService.startDeviceLink();
           if (mounted) setLinkData(data);
         }
-      } catch (e: any) {
-        if (mounted) setLinkError(e.message);
+      } catch (e: unknown) {
+        if (mounted) setLinkError(e instanceof Error ? e.message : String(e));
       }
     };
 
@@ -109,9 +110,9 @@ const LceLiveView = memo(function LceLiveView() {
             if (res.isLinked && mounted) {
               setIsSignedIn(true);
               setLinkData(null);
-              clearInterval(pollInterval);
+              if (pollInterval !== null) clearInterval(pollInterval);
             }
-          } catch (e: any) {
+          } catch (e: unknown) {
             console.warn("Poll failed", e);
           }
         },
@@ -121,7 +122,7 @@ const LceLiveView = memo(function LceLiveView() {
 
     return () => {
       mounted = false;
-      if (pollInterval) clearInterval(pollInterval);
+      if (pollInterval !== null) clearInterval(pollInterval);
     };
   }, [currentTab, linkData]);
 
@@ -151,8 +152,8 @@ const LceLiveView = memo(function LceLiveView() {
     try {
       await action();
       fetchSocialData();
-    } catch (e: any) {
-      setErrorModal(e.message || "An error occurred");
+    } catch (e: unknown) {
+      setErrorModal(e instanceof Error ? e.message : "An error occurred");
     }
   };
 
@@ -174,8 +175,8 @@ const LceLiveView = memo(function LceLiveView() {
       setIsHosting(true);
       setHostStatus(`Hosting at ${endpoint.ip}:25565`);
       setInvitedFriends(new Set());
-    } catch (e: any) {
-      const msg = typeof e === "string" ? e : e?.message || "Unknown error";
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error";
       setErrorModal("STUN discovery failed: " + msg);
       setHostStatus("");
     } finally {
@@ -207,7 +208,7 @@ const LceLiveView = memo(function LceLiveView() {
     try {
       await TauriService.stopAllProxies();
       await lceLiveService.deactivateGameInvites();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn("Stop hosting failed", e);
     }
     setIsHosting(false);
@@ -237,16 +238,17 @@ const LceLiveView = memo(function LceLiveView() {
         25565,
       )
         .then(() => setHostStatus("Relay active"))
-        .catch((relayErr: any) => {
+        .catch((relayErr: unknown) => {
           const relayMsg =
-            typeof relayErr === "string"
-              ? relayErr
-              : relayErr?.message || "Unknown error";
+            relayErr instanceof Error ? relayErr.message
+              : typeof relayErr === "string"
+                ? relayErr
+                : "Unknown error";
           console.warn("Relay failed:", relayMsg);
           setHostStatus("Relay disconnected");
         });
-    } catch (e: any) {
-      const msg = typeof e === "string" ? e : e?.message || "Unknown error";
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error";
       setErrorModal("Failed to send invite: " + msg);
     }
   };
@@ -377,7 +379,7 @@ const LceLiveView = memo(function LceLiveView() {
     showHostMethodPicker,
   ]);
 
-  const tabs = ["friends", "requests", "invites"];
+  const tabs: ("friends" | "requests" | "invites")[] = ["friends", "requests", "invites"];
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (errorModal) {
@@ -433,14 +435,14 @@ const LceLiveView = memo(function LceLiveView() {
         const curIdx = tabs.indexOf(currentTab);
         if (e.key === "q" || e.key === "Q" || e.key === "ArrowLeft") {
           const next = curIdx > 0 ? tabs[curIdx - 1] : tabs[tabs.length - 1];
-          setCurrentTab(next as any);
+          setCurrentTab(next);
           setFocusIndex(0);
           playPressSound();
           return;
         }
         if (e.key === "e" || e.key === "E" || e.key === "ArrowRight") {
           const next = curIdx < tabs.length - 1 ? tabs[curIdx + 1] : tabs[0];
-          setCurrentTab(next as any);
+          setCurrentTab(next);
           setFocusIndex(0);
           playPressSound();
           return;
@@ -774,7 +776,7 @@ const LceLiveView = memo(function LceLiveView() {
                   imageRendering: "pixelated",
                 }}
                 onClick={() => {
-                  setCurrentTab(t as any);
+                  setCurrentTab(t);
                   setFocusIndex(0);
                   playPressSound();
                 }}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { TauriService } from "../services/TauriService";
+import { TauriService, type CustomEdition } from "../services/TauriService";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import type { Edition } from "../types/edition";
 
 async function imageUrlToBase64(url: string): Promise<string> {
   const response = await fetch(url);
@@ -74,8 +75,8 @@ const PARTNERSHIP_SERVERS = [
 interface GameManagerProps {
   profile: string;
   setProfile: (id: string) => void;
-  customEditions: any[];
-  setCustomEditions: (editions: any[]) => void;
+  customEditions: CustomEdition[];
+  setCustomEditions: (editions: CustomEdition[]) => void;
 }
 
 function compareVersions(v1: string, v2: string) {
@@ -146,7 +147,7 @@ export function useGameManager({
         if (response.ok) {
           const data = await response.json();
           const asset = data.assets.find(
-            (a: any) => a.name === "neoLegacyWindows64.zip",
+            (a: { name: string }) => a.name === "neoLegacyWindows64.zip",
           );
           if (asset) {
             setDynamicUrls((prev) => ({
@@ -176,7 +177,7 @@ export function useGameManager({
         if (response.ok) {
           const data = await response.json();
           let tags: string[] = data
-            .map((r: any) => r.tag_name)
+            .map((r: { tag_name: string }) => r.tag_name)
             .filter((t: string) => !t.toLowerCase().includes("server"));
 
           const vTags = tags
@@ -231,7 +232,7 @@ export function useGameManager({
     [branches, profile, setProfile],
   );
 
-  const editions = useMemo(() => {
+  const editions = useMemo((): Edition[] => {
     return [
       ...BASE_EDITIONS.map((e) => {
         const availableBranches = branches[e.id] || ["Stable"];
@@ -343,10 +344,10 @@ export function useGameManager({
       try {
         await TauriService.downloadRunner(name, url);
         setRunnerDownloadProgress(null);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error(e);
         setError(
-          typeof e === "string" ? e : e.message || "Failed to download runner",
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to download runner",
         );
       } finally {
         setIsRunnerDownloading(false);
@@ -370,10 +371,10 @@ export function useGameManager({
         setProfile(id);
         setDownloadProgress(null);
         setDownloadingId(null);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error(e);
         setError(
-          typeof e === "string" ? e : e.message || "Failed to install version",
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to install version",
         );
         setDownloadProgress(null);
         setDownloadingId(null);
@@ -410,10 +411,10 @@ export function useGameManager({
     try {
       getCurrentWindow().minimize();
       await TauriService.launchGame(profile, PARTNERSHIP_SERVERS);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       setError(
-        typeof e === "string" ? e : e.message || "Failed to launch game",
+        e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to launch game",
       );
     } finally {
       setIsGameRunning(false);
@@ -485,10 +486,10 @@ export function useGameManager({
         setSteamSuccessMessage(
           `Added ${name} to Steam! (Restart Steam to see it)`,
         );
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error(e);
         setError(
-          typeof e === "string" ? e : e.message || "Failed to add to Steam",
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to add to Steam",
         );
       }
     },

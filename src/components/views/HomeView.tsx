@@ -6,6 +6,7 @@ import {
   useAudio,
   useGame,
 } from "../../context/LauncherContext";
+import type { Edition } from "../../types/edition";
 
 const HomeView = memo(function HomeView() {
   const { setActiveView, setShowCredits, focusSection, onNavigateToSkin } =
@@ -24,7 +25,7 @@ const HomeView = memo(function HomeView() {
   } = useGame();
 
   const isFocusedSection = focusSection === "menu";
-  const selectedEdition = editions.find((e: any) => e.id === profile);
+  const selectedEdition = editions.find((e: Edition) => e.id === profile);
   const selectedVersionName = selectedEdition?.name || "Game";
   const isInstalled = installs.includes(profile);
   const isDownloading = downloadingId === profile;
@@ -128,7 +129,7 @@ const HomeView = memo(function HomeView() {
       transition={{ duration: useConfig().animationsEnabled ? 0.3 : 0 }}
       className="relative w-full max-w-[540px] flex flex-col space-y-3 outline-none"
     >
-      {buttons.map((btn: any, i: number) => (
+      {buttons.map((btn: { label: string; action: () => void; isDanger?: boolean; disabled: boolean; id?: string }, i: number) => (
         <div key={i} className="relative w-full group">
           <button
             onMouseEnter={() =>

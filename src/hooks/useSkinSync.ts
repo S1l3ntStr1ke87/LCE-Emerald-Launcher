@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { PckService } from "../services/PckService";
 import { TauriService } from "../services/TauriService";
-import { PCKAssetType, PCKProperty } from "../types/pck";
+import { PCKAsset, PCKAssetType, PCKProperty } from "../types/pck";
 interface Edition {
   id: string;
   supportsSlimSkins?: boolean;
@@ -99,7 +99,7 @@ export function useSkinSync({ username, profile, editions }: UseSkinSyncProps) {
 
           const seededId = getSeededId(username);
           const packId = seededId.slice(-4);
-          const files: any[] = [
+          const files: PCKAsset[] = [
             {
               id: "0",
               path: "0",

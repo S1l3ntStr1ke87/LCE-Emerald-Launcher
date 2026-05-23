@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
-import { TauriService } from "../services/TauriService";
+import { TauriService, type CustomEdition } from "../services/TauriService";
 export function useAppConfig() {
   const [username, setUsername] = useLocalStorage("lce-username", "Steve");
   const [theme, setTheme] = useLocalStorage("lce-theme", "Modern");
@@ -17,7 +17,7 @@ export function useAppConfig() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [linuxRunner, setLinuxRunner] = useState<string | undefined>();
   const [perfBoost, setPerfBoost] = useState(false);
-  const [customEditions, setCustomEditions] = useState<any[]>([]);
+  const [customEditions, setCustomEditions] = useState<CustomEdition[]>([]);
   const [mangohudEnabled, setMangohudEnabled] = useState(false);
   useEffect(() => {
     TauriService.loadConfig().then((config) => {

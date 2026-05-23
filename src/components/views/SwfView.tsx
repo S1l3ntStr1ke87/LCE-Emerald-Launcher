@@ -40,7 +40,7 @@ export default function SwfView() {
     if (imageUrls[img.id]) return imageUrls[img.id];
     let url = "";
     if (img.type === "jpeg") {
-      const blob = new Blob([img.data as any], { type: "image/jpeg" });
+      const blob = new Blob([img.data], { type: "image/jpeg" });
       url = URL.createObjectURL(blob);
     } else if (img.type === "lossless") {
       const rgba = await SwfService.decodeLosslessToRGBA(img);
@@ -80,7 +80,7 @@ export default function SwfView() {
         setSelectedImageId(extracted[0].id);
       }
       showNotification(`Loaded ${file.name}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showNotification("Failed to process SWF", "error");
       setImages([]);
@@ -99,7 +99,7 @@ export default function SwfView() {
     let blob: Blob;
     let ext = "png";
     if (img.type === "jpeg") {
-      blob = new Blob([img.data as any], { type: "image/jpeg" });
+      blob = new Blob([img.data], { type: "image/jpeg" });
       ext = "jpg";
     } else if (img.type === "lossless") {
       const rgba = await SwfService.decodeLosslessToRGBA(img);
@@ -114,11 +114,11 @@ export default function SwfView() {
         const res = await fetch(dataUrl);
         blob = await res.blob();
       } else {
-        blob = new Blob([rgba as any], { type: "application/octet-stream" });
+        blob = new Blob([rgba], { type: "application/octet-stream" });
         ext = "bin";
       }
     } else {
-      blob = new Blob([img.data as any], { type: "application/octet-stream" });
+      blob = new Blob([img.data], { type: "application/octet-stream" });
       ext = "bin";
     }
 
@@ -162,7 +162,7 @@ export default function SwfView() {
     if (!swfData) return;
     playPressSound();
     const result = SwfService.serialize(swfData.version, swfData.compressed, swfData.frameHeader, swfData.tags);
-    const blob = new Blob([result as any], { type: "application/x-shockwave-flash" });
+    const blob = new Blob([result], { type: "application/x-shockwave-flash" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

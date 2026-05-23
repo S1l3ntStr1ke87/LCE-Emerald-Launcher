@@ -28,9 +28,9 @@ export default function GrfEditorView() {
       setGrf(parsedGrf);
       setFilename(file.name);
       showNotification(`Loaded ${file.name}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to parse GRF", err);
-      showNotification(err.message || "Failed to parse GRF", "error");
+      showNotification(err instanceof Error ? err.message : "Failed to parse GRF", "error");
     }
     e.target.value = "";
   };
@@ -94,7 +94,7 @@ export default function GrfEditorView() {
     playPressSound();
     try {
       const buffer = GrfService.serializeGRF(grf);
-      const blob = new Blob([buffer as any]);
+      const blob = new Blob([buffer]);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -102,9 +102,9 @@ export default function GrfEditorView() {
       a.click();
       URL.revokeObjectURL(url);
       showNotification("GRF Saved Successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save GRF", err);
-      showNotification(err.message || "Failed to save GRF", "error");
+      showNotification(err instanceof Error ? err.message : "Failed to save GRF", "error");
     }
   };
 

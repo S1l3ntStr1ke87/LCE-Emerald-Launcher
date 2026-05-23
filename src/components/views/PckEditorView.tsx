@@ -68,7 +68,7 @@ export default function PckEditorView() {
       });
     });
 
-    const convert = (nodes: Record<string, TempNode>): any[] => {
+    const convert = (nodes: Record<string, TempNode>): TreeNode[] => {
       return Object.values(nodes)
         .sort((a, b) => {
           if (a.isFolder && !b.isFolder) return -1;
@@ -107,7 +107,7 @@ export default function PckEditorView() {
       return;
     }
 
-    const blob = new Blob([selectedAsset.data as any], { type: "image/png" });
+    const blob = new Blob([selectedAsset.data], { type: "image/png" });
     const url = URL.createObjectURL(blob);
     setAssetPreview({ id: selectedAsset.id, url });
 
@@ -128,17 +128,19 @@ export default function PckEditorView() {
     setExpandedFolders(next);
   };
 
-  const renderTree = (nodes: any[], depth = 0) => {
+  type TreeNode = { name: string; path: string; isFolder: boolean; children: TreeNode[]; asset?: PCKAsset };
+
+  const renderTree = (nodes: TreeNode[], depth = 0) => {
     return nodes.map((node) => {
       const isExpanded = expandedFolders.has(node.path) || !!searchTerm;
-      const isSelected = selectedAssetId === node.asset?.id;
+      const isSelected = node.asset ? selectedAssetId === node.asset.id : false;
       return (
         <div key={node.path} className="flex flex-col">
           <div
             onClick={() => {
               if (node.isFolder) {
                 toggleFolder(node.path);
-              } else {
+              } else if (node.asset) {
                 playPressSound();
                 setSelectedAssetId(node.asset.id);
               }
@@ -175,7 +177,7 @@ export default function PckEditorView() {
             <span className="truncate mc-text-shadow text-base">
               {node.name}
             </span>
-            {!node.isFolder && (
+            {!node.isFolder && node.asset && (
               <span className="ml-auto text-[10px] opacity-40 uppercase">
                 {(node.asset.size / 1024).toFixed(1)} KB
               </span>
@@ -202,7 +204,7 @@ export default function PckEditorView() {
       setOpenedPath(path);
       setSelectedAssetId(parsed.files[0]?.id || null);
       setExpandedFolders(new Set());
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err !== "CANCELED") {
         console.error("Failed to parse PCK", err);
         showNotification("Failed to parse PCK", "error");
@@ -246,7 +248,7 @@ export default function PckEditorView() {
       playPressSound();
       await TauriService.writeBinaryFile(path, asset.data);
       showNotification(`Exported: ${fileName}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err !== "CANCELED") showNotification("Export failed", "error");
     }
   };
@@ -413,7 +415,7 @@ export default function PckEditorView() {
         );
       }
       showNotification("All Assets Exported");
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err !== "CANCELED") showNotification("Export failed", "error");
     }
   };
@@ -438,8 +440,8 @@ export default function PckEditorView() {
         setOpenedPath(targetPath);
         showNotification("PCK Saved Successfully");
       }
-    } catch (err: any) {
-      if (err !== "CANCELED") showNotification("Save failed", "error");
+    } catch (err: unknown) {
+      if (err !== "CANCELED") showNotification("Export failed", "error");
     }
   };
 

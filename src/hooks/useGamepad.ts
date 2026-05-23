@@ -53,7 +53,7 @@ export const useGamepad = ({ playSfx, isWindowVisible }: UseGamepadProps) => {
           const btnVal = (i: number): number => {
             const btn = gp.buttons[i];
             if (!btn) return 0;
-            return typeof btn === "object" ? btn.value : (btn as any) ?? 0;
+            return typeof btn === "object" ? btn.value : 0;
           };
           const justPressed = (i: number) => btnVal(i) > 0.5 && !lastButtons.current[i];
           if (justPressed(1)) dispatchKey('Enter');

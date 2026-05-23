@@ -32,9 +32,9 @@ export default function OptionsEditorView() {
       const parsed = OptionsService.readOptions(buffer);
       setOpt(parsed);
       showNotification(`Loaded options.dat`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to parse Options", err);
-      showNotification(err.message || "Failed to parse Options", "error");
+      showNotification(err instanceof Error ? err.message : "Failed to parse Options", "error");
     }
     e.target.value = "";
   };
@@ -52,12 +52,12 @@ export default function OptionsEditorView() {
       a.click();
       URL.revokeObjectURL(url);
       showNotification("Options Saved");
-    } catch (err: any) {
+    } catch (err: unknown) {
       showNotification("Failed to save", "error");
     }
   };
 
-  const updateSetting = (field: keyof OptionsFile, value: any) => {
+  const updateSetting = (field: keyof OptionsFile, value: string | number | boolean | number[]) => {
     if (!opt) return;
     setOpt({ ...opt, [field]: value });
   };

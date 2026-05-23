@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TauriService } from "../../services/TauriService";
 import { lceLiveService, GameInvite } from "../../services/LceLiveService";
+import type { Edition } from "../../types/edition";
 
 export default function ChooseInstanceModal({
   isOpen,
@@ -16,7 +17,7 @@ export default function ChooseInstanceModal({
   onClose: () => void;
   playPressSound: (s?: string) => void;
   playBackSound: (s?: string) => void;
-  editions: any[];
+  editions: Edition[];
   installs: string[];
   invite: GameInvite | null;
 }) {
@@ -26,7 +27,7 @@ export default function ChooseInstanceModal({
   const [isJoining, setIsJoining] = useState(false);
   const [focusIndex, setFocusIndex] = useState(0);
 
-  const validInstances = editions.filter((e: any) =>
+  const validInstances = editions.filter((e: Edition) =>
     installs.includes(e.instanceId)
   );
 
@@ -53,10 +54,11 @@ export default function ChooseInstanceModal({
     setError("");
     setStatus("Accepting invite...");
     try {
-      const inviteData = await lceLiveService.acceptGameInvite(invite.inviteId);
-      const hostIp = inviteData.hostIp || (typeof invite.from !== 'string' && (invite as any).from?.hostIp);
-      const hostPort = inviteData.hostPort || invite.hostPort;
-      const sessionId = inviteData.signalingSessionId || invite.signalingSessionId || "";
+      const inviteData = await lceLiveService.acceptGameInvite(invite.inviteId) as Record<string, unknown>;
+      const fromIp = typeof invite.from !== 'string' ? (invite.from as unknown as Record<string, string>).hostIp : undefined;
+      const hostIp: string = (inviteData.hostIp as string) || fromIp || invite.hostIp;
+      const hostPort: number = (inviteData.hostPort as number) || invite.hostPort;
+      const sessionId = (inviteData.signalingSessionId as string) || invite.signalingSessionId || "";
 
       if (sessionId) {
         setStatus("Connecting via relay...");
@@ -77,8 +79,8 @@ export default function ChooseInstanceModal({
         ]);
       }
       onClose();
-    } catch (e: any) {
-      setError(e.toString());
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
       setStatus("");
       setIsJoining(false);
     }
@@ -101,7 +103,7 @@ export default function ChooseInstanceModal({
         setFocusIndex((prev) => (prev - 1 + max) % max);
       } else if (e.key === "Enter") {
         if (focusIndex === 0 && validInstances.length > 0) {
-          const currentIdx = validInstances.findIndex((i: any) => i.instanceId === selectedInstance);
+          const currentIdx = validInstances.findIndex((i: Edition) => i.instanceId === selectedInstance);
           const next = (currentIdx + 1) % validInstances.length;
           setSelectedInstance(validInstances[next].instanceId);
           playPressSound();
@@ -147,7 +149,7 @@ export default function ChooseInstanceModal({
             {validInstances.length > 0 ? (
               <div className="w-full mb-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto"
                 style={{ scrollbarWidth: "thin", scrollbarColor: "#373737 transparent" }}>
-                {validInstances.map((inst: any) => {
+                {validInstances.map((inst: Edition) => {
                   const isSelected = selectedInstance === inst.instanceId;
                   return (
                     <div

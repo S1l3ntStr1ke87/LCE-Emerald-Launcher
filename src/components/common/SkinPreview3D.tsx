@@ -2,6 +2,8 @@ import { useEffect, useRef, memo } from 'react';
 import * as THREE from 'three';
 import { PCKAsset, PCKAssetType } from '../../types/pck';
 
+type UVSet = Record<string, number[]>;
+
 interface SkinPreview3DProps {
   asset: PCKAsset;
   previewUrl?: string;
@@ -73,7 +75,7 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, previewUrl, className
     };
 
     const isFallbackUrl = !previewUrl;
-    const url = previewUrl || URL.createObjectURL(new Blob([asset.data as any], { type: 'image/png' }));
+    const url = previewUrl || URL.createObjectURL(new Blob([asset.data], { type: 'image/png' }));
     const textureLoader = new THREE.TextureLoader();
     let active = true;
     textureLoader.load(url, (texture) => {
@@ -96,10 +98,10 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, previewUrl, className
         return new THREE.MeshLambertMaterial({ map: matTex, transparent: true, alphaTest: 0.5, side: THREE.FrontSide });
       };
 
-      const createPart = (w: number, h: number, d: number, uv: any, overlayUv?: any, isMirror = false) => {
+      const createPart = (w: number, h: number, d: number, uv: UVSet, overlayUv?: UVSet, isMirror = false) => {
         const group = new THREE.Group();
         const geo = new THREE.BoxGeometry(w, h, d);
-        const getMats = (uvSet: any) => {
+        const getMats = (uvSet: UVSet) => {
           return [
             createFaceMaterial(uvSet.right[0], uvSet.right[1], uvSet.right[2], uvSet.right[3], isMirror), // +x
             createFaceMaterial(uvSet.left[0], uvSet.left[1], uvSet.left[2], uvSet.left[3], isMirror),   // -x

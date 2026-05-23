@@ -50,7 +50,7 @@ export default function LocEditorView() {
     if (!loc) return;
     playPressSound();
     const buffer = ArcService.serializeLOC(loc);
-    const blob = new Blob([buffer as any]);
+    const blob = new Blob([buffer]);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

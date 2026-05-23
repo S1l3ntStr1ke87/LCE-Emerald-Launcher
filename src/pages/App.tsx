@@ -31,6 +31,7 @@ import {
 } from "../context/LauncherContext";
 import { TauriService } from "../services/TauriService";
 import { useLceLiveNotifications } from "../hooks/useLceLiveNotifications";
+import type { Edition } from "../types/edition";
 import pkg from "../../package.json";
 export default function App() {
   const {
@@ -67,7 +68,7 @@ export default function App() {
   }, [config.isDayTime]);
 
   const selectedEdition = game.editions.find(
-    (e: any) => e.instanceId === config.profile,
+    (e: Edition) => e.instanceId === config.profile,
   );
   const selectedVersionName = selectedEdition?.name || "";
   const hasAnyInstall = game.installs.length > 0;
@@ -132,7 +133,7 @@ export default function App() {
               {...backgroundFade}
             >
               <PanoramaBackground
-                profile={selectedEdition?.panorama}
+                profile={selectedEdition?.panorama ?? "vanilla_tu19"}
                 isDay={displayIsDay}
               />
             </motion.div>

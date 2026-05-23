@@ -10,6 +10,7 @@ import {
   useGame,
 } from "../../context/LauncherContext";
 import { ScreenshotImage } from "../common/ScreenshotImage";
+import type { Edition } from "../../types/edition";
 interface DeleteConfirmButtonProps {
   label: string;
   onClick: () => void;
@@ -73,14 +74,14 @@ const VersionsView = memo(function VersionsView() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSetUidModalOpen, setIsSetUidModalOpen] = useState(false);
   const [setUidTargetId, setSetUidTargetId] = useState("");
-  const [editingEdition, setEditingEdition] = useState<any>(null);
+  const [editingEdition, setEditingEdition] = useState<Edition | null>(null);
   const [initialPath, setInitialPath] = useState<string>("");
   const [hoveredBtn, setHoveredBtn] = useState<{
     row: number;
     btn: string;
   } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [deleteConfirmEdition, setDeleteConfirmEdition] = useState<any>(null);
+  const [deleteConfirmEdition, setDeleteConfirmEdition] = useState<Edition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const ITEM_COUNT = editions.length + 3;
@@ -185,7 +186,7 @@ const VersionsView = memo(function VersionsView() {
     }
   }, [focusIndex]);
 
-  const handleEditionClick = (edition: any, index: number) => {
+  const handleEditionClick = (edition: Edition, index: number) => {
     const isInstalled = installedVersions.includes(edition.instanceId);
     if (isInstalled) {
       playPressSound();
@@ -233,7 +234,7 @@ const VersionsView = memo(function VersionsView() {
           className="w-full max-h-[45vh] overflow-y-auto py-2 custom-scrollbar"
         >
           <div className="flex flex-col gap-1">
-            {editions.map((edition: any, i: number) => {
+            {editions.map((edition: Edition, i: number) => {
               const isInstalled = installedVersions.includes(
                 edition.instanceId,
               );
@@ -514,7 +515,7 @@ const VersionsView = memo(function VersionsView() {
                             addToSteam(
                               edition.instanceId,
                               edition.name,
-                              edition.titleImage,
+                              edition.titleImage ?? "",
                               panoramaUrl,
                             );
                             setOpenMenuId(null);
@@ -702,7 +703,7 @@ const VersionsView = memo(function VersionsView() {
           setEditingEdition(null);
           setInitialPath("");
         }}
-        onImport={(ed: any) => {
+        onImport={(ed: { name: string; desc: string; url: string; path?: string }) => {
           if (editingEdition) {
             onUpdateEdition(editingEdition.id, ed);
           } else {
