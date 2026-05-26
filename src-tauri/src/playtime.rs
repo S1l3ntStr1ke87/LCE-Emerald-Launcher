@@ -72,3 +72,46 @@ pub fn get_playtime(app: &AppHandle, instance_id: &str) -> PlaytimeResponse {
 
     PlaytimeResponse { total_seconds, week_seconds, day_seconds }
 }
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaytimeDayEntry {
+    pub label: String,
+    pub seconds: u64,
+}
+
+pub fn get_playtime_daily(app: &AppHandle, instance_id: &str, days: u64) -> Vec<PlaytimeDayEntry> {
+    let data = load(app);
+    let sessions = data.sessions.get(instance_id);
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let day_secs = 24 * 60 * 60;
+    let mut entries: Vec<(u64, u64)> = (0..days).map(|d| {
+        let day_start = now - (d * day_secs) - (now % day_secs);
+        (day_start, 0)
+    }).collect();
+
+    if let Some(sessions) = sessions {
+        for session in sessions {
+            for entry in entries.iter_mut() {
+                let day_end = entry.0 + day_secs;
+                if session.start < day_end && session.end > entry.0 {
+                    let overlap_start = std::cmp::max(session.start, entry.0);
+                    let overlap_end = std::cmp::min(session.end, day_end);
+                    if overlap_end > overlap_start {
+                        entry.1 += overlap_end - overlap_start;
+                    }
+                }
+            }
+        }
+    }
+
+    entries.reverse();
+    let day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    entries.into_iter().map(|(ts, secs)| {
+        let weekday = ((ts / day_secs) + 4) % 7;
+        PlaytimeDayEntry {
+            label: day_names[weekday as usize].to_string(),
+            seconds: secs,
+        }
+    }).collect()
+}

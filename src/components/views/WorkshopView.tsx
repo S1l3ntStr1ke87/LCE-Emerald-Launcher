@@ -633,6 +633,61 @@ const WorkshopView = memo(function WorkshopView() {
                 ref={gridRef}
                 className="flex-1 overflow-y-auto p-6 scroll-smooth"
               >
+                {isInstalledTab && !search.trim() && filteredItems.length > 0 && (
+                  <div className="flex items-center justify-center gap-3 mb-4 pb-3 border-b border-[#333]">
+                    <button
+                      onClick={async () => {
+                        const updates = filteredItems.filter((p) => hasUpdate(p));
+                        if (updates.length === 0) return;
+                        playPressSound();
+                        for (const pkg of updates) {
+                          const entries = installedPkgs.filter((p) => p.packageId === pkg.id);
+                          for (const entry of entries) {
+                            try {
+                              await TauriService.workshopInstall(entry.instanceId, pkg.id, pkg.zips!, pkg.version);
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }
+                        }
+                        refreshInstalled();
+                      }}
+                      className="h-8 px-4 flex items-center justify-center text-sm mc-text-shadow border border-[#555] text-[#FFFF55] hover:bg-white/10 transition-colors"
+                      style={{
+                        backgroundImage: "url('/images/Button_Background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      Update All ({filteredItems.filter((p) => hasUpdate(p)).length})
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (filteredItems.length === 0) return;
+                        playPressSound();
+                        for (const pkg of filteredItems) {
+                          const entries = installedPkgs.filter((p) => p.packageId === pkg.id);
+                          for (const entry of entries) {
+                            try {
+                              await TauriService.workshopInstall(entry.instanceId, pkg.id, pkg.zips!, pkg.version);
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }
+                        }
+                        refreshInstalled();
+                      }}
+                      className="h-8 px-4 flex items-center justify-center text-sm mc-text-shadow border border-[#555] text-white hover:bg-white/10 transition-colors"
+                      style={{
+                        backgroundImage: "url('/images/Button_Background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      Reinstall All ({filteredItems.length})
+                    </button>
+                  </div>
+                )}
                 {isSearchTab && !search.trim() ? (
                   <div className="flex flex-col items-center justify-center h-[200px] opacity-40">
                     <span className="text-xl mc-text-shadow tracking-widest uppercase">

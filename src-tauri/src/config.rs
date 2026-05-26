@@ -30,6 +30,9 @@ pub fn load_config_raw(app: AppHandle) -> AppConfig {
         legacy_mode: Some(false),
         mangohud_enabled: None,
         saved_servers: None,
+        extra_launch_args: None,
+        launch_prefix: None,
+        launch_env_vars: None,
     }
 }
 

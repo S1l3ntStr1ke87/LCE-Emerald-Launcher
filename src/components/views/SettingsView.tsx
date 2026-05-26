@@ -32,6 +32,12 @@ const SettingsView = memo(function SettingsView() {
     setLegacyMode,
     mangohudEnabled,
     setMangohudEnabled,
+    extraLaunchArgs,
+    setExtraLaunchArgs,
+    launchPrefix,
+    setLaunchPrefix,
+    launchEnvVars,
+    setLaunchEnvVars,
   } = useConfig();
   const {
     currentTrack,
@@ -50,10 +56,16 @@ const SettingsView = memo(function SettingsView() {
   const { isLinux, isMac } = usePlatform();
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [currentSubMenu, setCurrentSubMenu] = useState<
-    "main" | "audio" | "video" | "controls" | "launcher"
+    "main" | "audio" | "video" | "controls" | "launcher" | "game"
   >("main");
   const [runners, setRunners] = useState<Runner[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [argsInput, setArgsInput] = useState("");
+  const [prefixInput, setPrefixInput] = useState("");
+  const [envVarsInput, setEnvVarsInput] = useState("");
+  const [showModal, setShowModal] = useState<
+    "args" | "prefix" | "envVars" | null
+  >(null);
 
   const layouts = ["KBM", "PLAYSTATION", "XBOX"];
 
@@ -282,6 +294,16 @@ const SettingsView = memo(function SettingsView() {
           setFocusIndex(0);
         },
       });
+      items.push({
+        id: "game_menu",
+        label: "Game",
+        type: "button",
+        onClick: () => {
+          playPressSound();
+          setCurrentSubMenu("game");
+          setFocusIndex(0);
+        },
+      });
     } else if (currentSubMenu === "audio") {
       items.push({
         id: "music",
@@ -331,6 +353,48 @@ const SettingsView = memo(function SettingsView() {
         type: "button",
         onClick: handleLayoutToggle,
       });
+    } else if (currentSubMenu === "game") {
+      const envVarsCount = launchEnvVars
+        ? Object.keys(launchEnvVars).length
+        : 0;
+      items.push({
+        id: "extra_launch_args",
+        label:
+          extraLaunchArgs && extraLaunchArgs.length > 0
+            ? `Extra Args: ${extraLaunchArgs.join(" ")}`
+            : "Extra Launch Args: None",
+        type: "button",
+        onClick: () => {
+          playPressSound();
+          setArgsInput(extraLaunchArgs?.join(" ") ?? "");
+          setShowModal("args");
+        },
+      });
+      items.push({
+        id: "launch_prefix",
+        label: launchPrefix ? `Prefix: ${launchPrefix}` : "Launch Prefix: None",
+        type: "button",
+        onClick: () => {
+          playPressSound();
+          setPrefixInput(launchPrefix ?? "");
+          setShowModal("prefix");
+        },
+      });
+      items.push({
+        id: "launch_env_vars",
+        label: `Launch Env Vars: ${envVarsCount > 0 ? `${envVarsCount} set` : "None"}`,
+        type: "button",
+        onClick: () => {
+          playPressSound();
+          const current = launchEnvVars
+            ? Object.entries(launchEnvVars)
+                .map(([k, v]) => `${k}=${v}`)
+                .join("\n")
+            : "";
+          setEnvVarsInput(current);
+          setShowModal("envVars");
+        },
+      });
     } else if (currentSubMenu === "launcher") {
       items.push({
         id: "rpc",
@@ -375,6 +439,32 @@ const SettingsView = memo(function SettingsView() {
         });
       }
 
+      items.push({
+        id: "export_settings",
+        label: "Export Settings",
+        type: "button",
+        onClick: async () => {
+          playPressSound();
+          try {
+            await TauriService.exportSettings();
+          } catch (e) {
+            if (e !== "CANCELED") console.error(e);
+          }
+        },
+      });
+      items.push({
+        id: "import_settings",
+        label: "Import Settings",
+        type: "button",
+        onClick: async () => {
+          playPressSound();
+          try {
+            await TauriService.importSettings();
+          } catch (e) {
+            if (e !== "CANCELED") console.error(e);
+          }
+        },
+      });
       items.push({
         id: "reset_setup",
         label: "Reset Setup",
@@ -444,11 +534,19 @@ const SettingsView = memo(function SettingsView() {
     playBackSound,
     setActiveView,
     runners,
+    extraLaunchArgs,
+    launchPrefix,
+    launchEnvVars,
   ]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Backspace") {
+        if (showModal) {
+          playBackSound();
+          setShowModal(null);
+          return;
+        }
         playBackSound();
         if (currentSubMenu !== "main") {
           setCurrentSubMenu("main");
@@ -486,7 +584,14 @@ const SettingsView = memo(function SettingsView() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [focusIndex, settingsItems, playBackSound, setActiveView, currentSubMenu]);
+  }, [
+    focusIndex,
+    settingsItems,
+    playBackSound,
+    setActiveView,
+    currentSubMenu,
+    showModal,
+  ]);
 
   useEffect(() => {
     if (focusIndex !== null) {
@@ -545,7 +650,9 @@ const SettingsView = memo(function SettingsView() {
               ? "Video"
               : currentSubMenu === "controls"
                 ? "Controls"
-                : "Launcher"}
+                : currentSubMenu === "game"
+                  ? "Game"
+                  : "Launcher"}
       </h2>
 
       {currentSubMenu === "main" ? (
@@ -584,8 +691,10 @@ const SettingsView = memo(function SettingsView() {
               );
             }
 
-            const isRed = ("color" in item && (item as { color: string }).color === "red");
-            const isSmall = "small" in item && (item as { small: boolean }).small;
+            const isRed =
+              "color" in item && (item as { color: string }).color === "red";
+            const isSmall =
+              "small" in item && (item as { small: boolean }).small;
 
             return (
               <button
@@ -723,6 +832,261 @@ const SettingsView = memo(function SettingsView() {
           </button>
         );
       })()}
+
+      {showModal === "args" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 w-screen h-screen z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md"
+        >
+          <div
+            className="relative w-[400px] p-6 flex flex-col items-center shadow-2xl"
+            style={{
+              backgroundImage: "url('/images/frame_background.png')",
+              backgroundSize: "100% 100%",
+              imageRendering: "pixelated",
+            }}
+          >
+            <h2 className="text-[#FFFF55] text-2xl mc-text-shadow mb-4 border-b-2 border-[#373737] pb-2 w-full text-center uppercase">
+              Extra Launch Args
+            </h2>
+            <p className="text-[#AAAAAA] text-xs mb-4 text-center mc-text-shadow">
+              Space-separated arguments passed to the game executable
+            </p>
+            <input
+              autoFocus
+              value={argsInput}
+              onChange={(e) => setArgsInput(e.target.value)}
+              placeholder="e.g. -quitondisconnect -ip 127.0.0.1"
+              className="w-full h-10 px-3 bg-black/40 border-2 border-[#373737] text-white text-base outline-none font-['Mojangles'] text-center"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <div className="flex gap-4 mt-6 w-full justify-center">
+              <button
+                onClick={() => {
+                  playBackSound();
+                  setShowModal(null);
+                }}
+                className="w-32 h-10 flex items-center justify-center text-xl mc-text-shadow text-white transition-colors outline-none border-none hover:text-[#FFFF55]"
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/button_highlighted.png')")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/Button_Background.png')")
+                }
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  playPressSound();
+                  const trimmed = argsInput.trim();
+                  setExtraLaunchArgs(trimmed ? trimmed.split(/\s+/) : []);
+                  setShowModal(null);
+                }}
+                className="w-32 h-10 flex items-center justify-center text-xl mc-text-shadow text-white transition-colors outline-none border-none hover:text-[#FFFF55]"
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/button_highlighted.png')")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/Button_Background.png')")
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {showModal === "prefix" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 w-screen h-screen z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md"
+        >
+          <div
+            className="relative w-[400px] p-6 flex flex-col items-center shadow-2xl"
+            style={{
+              backgroundImage: "url('/images/frame_background.png')",
+              backgroundSize: "100% 100%",
+              imageRendering: "pixelated",
+            }}
+          >
+            <h2 className="text-[#FFFF55] text-2xl mc-text-shadow mb-4 border-b-2 border-[#373737] pb-2 w-full text-center uppercase">
+              Launch Prefix
+            </h2>
+            <p className="text-[#AAAAAA] text-xs mb-4 text-center mc-text-shadow">
+              Command that wraps the entire launch (e.g. gamemoderun)
+            </p>
+            <input
+              autoFocus
+              value={prefixInput}
+              onChange={(e) => setPrefixInput(e.target.value)}
+              placeholder="e.g. gamemoderun"
+              className="w-full h-10 px-3 bg-black/40 border-2 border-[#373737] text-white text-base outline-none font-['Mojangles'] text-center"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <div className="flex gap-4 mt-6 w-full justify-center">
+              <button
+                onClick={() => {
+                  playBackSound();
+                  setShowModal(null);
+                }}
+                className="w-32 h-10 flex items-center justify-center text-xl mc-text-shadow text-white transition-colors outline-none border-none hover:text-[#FFFF55]"
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/button_highlighted.png')")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/Button_Background.png')")
+                }
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  playPressSound();
+                  setLaunchPrefix(prefixInput.trim() || undefined);
+                  setShowModal(null);
+                }}
+                className="w-32 h-10 flex items-center justify-center text-xl mc-text-shadow text-white transition-colors outline-none border-none hover:text-[#FFFF55]"
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/button_highlighted.png')")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/Button_Background.png')")
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {showModal === "envVars" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 w-screen h-screen z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md"
+        >
+          <div
+            className="relative w-[420px] p-6 flex flex-col items-center shadow-2xl"
+            style={{
+              backgroundImage: "url('/images/frame_background.png')",
+              backgroundSize: "100% 100%",
+              imageRendering: "pixelated",
+            }}
+          >
+            <h2 className="text-[#FFFF55] text-2xl mc-text-shadow mb-4 border-b-2 border-[#373737] pb-2 w-full text-center uppercase">
+              Launch Env Vars
+            </h2>
+            <p className="text-[#AAAAAA] text-xs mb-4 text-center mc-text-shadow">
+              One KEY=VALUE per line
+            </p>
+            <textarea
+              autoFocus
+              value={envVarsInput}
+              onChange={(e) => setEnvVarsInput(e.target.value)}
+              placeholder="WINEDLLOVERRIDES=foo=n&#10;MANGOHUD=1"
+              rows={6}
+              className="w-full px-3 py-2 bg-black/40 border-2 border-[#373737] text-white text-sm outline-none font-['Mojangles'] resize-none"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <div className="flex gap-4 mt-6 w-full justify-center">
+              <button
+                onClick={() => {
+                  playBackSound();
+                  setShowModal(null);
+                }}
+                className="w-32 h-10 flex items-center justify-center text-xl mc-text-shadow text-white transition-colors outline-none border-none hover:text-[#FFFF55]"
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/button_highlighted.png')")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/Button_Background.png')")
+                }
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  playPressSound();
+                  const trimmed = envVarsInput.trim();
+                  if (trimmed) {
+                    const vars: Record<string, string> = {};
+                    for (const line of trimmed.split("\n")) {
+                      const eqIdx = line.indexOf("=");
+                      if (eqIdx > 0) {
+                        vars[line.slice(0, eqIdx).trim()] = line
+                          .slice(eqIdx + 1)
+                          .trim();
+                      }
+                    }
+                    setLaunchEnvVars(
+                      Object.keys(vars).length > 0 ? vars : undefined,
+                    );
+                  } else {
+                    setLaunchEnvVars(undefined);
+                  }
+                  setShowModal(null);
+                }}
+                className="w-32 h-10 flex items-center justify-center text-xl mc-text-shadow text-white transition-colors outline-none border-none hover:text-[#FFFF55]"
+                style={{
+                  backgroundImage: "url('/images/Button_Background.png')",
+                  backgroundSize: "100% 100%",
+                  imageRendering: "pixelated",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/button_highlighted.png')")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundImage =
+                    "url('/images/Button_Background.png')")
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 });

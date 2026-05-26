@@ -77,6 +77,7 @@ interface GameManagerProps {
   setProfile: (id: string) => void;
   customEditions: CustomEdition[];
   setCustomEditions: (editions: CustomEdition[]) => void;
+  extraLaunchArgs?: string[];
 }
 
 function compareVersions(v1: string, v2: string) {
@@ -101,6 +102,7 @@ export function useGameManager({
   setProfile,
   customEditions,
   setCustomEditions,
+  extraLaunchArgs,
 }: GameManagerProps) {
   const [installs, setInstalls] = useState<string[]>([]);
   const [isGameRunning, setIsGameRunning] = useState(false);
@@ -410,7 +412,7 @@ export function useGameManager({
     setIsGameRunning(true);
     try {
       getCurrentWindow().minimize();
-      await TauriService.launchGame(profile, PARTNERSHIP_SERVERS);
+      await TauriService.launchGame(profile, PARTNERSHIP_SERVERS, extraLaunchArgs);
     } catch (e: unknown) {
       console.error(e);
       setError(

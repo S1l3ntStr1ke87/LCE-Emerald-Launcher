@@ -5,11 +5,12 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_opener::OpenerExt;
 use crate::commands::runners;
 use crate::config;
+use crate::types::AppConfig;
 #[cfg(target_os = "macos")]
 use crate::platform::macos;
 #[cfg(unix)]
 use crate::platform::linux;
-use crate::playtime::{self, PlaytimeResponse};
+use crate::playtime::{self, PlaytimeResponse, PlaytimeDayEntry};
 use crate::state::GameState;
 use crate::types::McServer;
 use crate::util;
@@ -53,9 +54,9 @@ pub async fn launch_game(
 
     #[cfg(target_os = "linux")]
     {
-        if let Some(runner_id) = config_val.linux_runner {
+        if let Some(ref runner_id) = config_val.linux_runner {
             let runners_list = runners::get_available_runners(app.clone());
-            if let Some(runner) = runners_list.into_iter().find(|r| r.id == runner_id) {
+            if let Some(runner) = runners_list.into_iter().find(|r| r.id == *runner_id) {
                 let is_proton = runner.r#type == "proton";
                 let program = if is_proton {
                     PathBuf::from(&runner.path).join("proton").to_string_lossy().to_string()
@@ -81,11 +82,16 @@ pub async fn launch_game(
                     (&program, &[])
                 };
 
-                let mut cmd = tokio::process::Command::new(prog);
+                let mut all_args: Vec<String> = Vec::new();
                 for a in runner_args {
-                    cmd.arg(a);
+                    all_args.push(a.to_string());
                 }
-                for a in &args {
+                all_args.extend(args.clone());
+                all_args.push(game_exe.to_string_lossy().to_string());
+                all_args.extend(extra_args.clone());
+                let (final_prog, final_args) = apply_launch_prefix(prog, all_args, &config_val);
+                let mut cmd = tokio::process::Command::new(&final_prog);
+                for a in &final_args {
                     cmd.arg(a);
                 }
 
@@ -110,10 +116,7 @@ pub async fn launch_game(
                     cmd.env_remove("QT_PLUGIN_PATH");
                 }
 
-                cmd.arg(&game_exe);
-                for a in &extra_args {
-                    cmd.arg(a);
-                }
+                apply_launch_env_vars(&mut cmd, &config_val);
                 cmd.current_dir(&working_dir);
                 let playtime_start = std::time::Instant::now();
                 let child = cmd.spawn().map_err(|e| e.to_string())?;
@@ -179,25 +182,30 @@ pub async fn launch_game(
                 .map(|pp| pp.to_path_buf())
                 .ok_or_else(|| "Unable to locate wine bin directory inside runtime.".to_string())?;
 
-            let mut cmd = if let Some(wrapper) = gptk_no_hud {
+            let (mac_prog, mut mac_args): (String, Vec<String>) = if let Some(ref wrapper) = gptk_no_hud {
                 let win_path = util::unix_path_to_wine_z_path(&game_exe);
-                let mut c = tokio::process::Command::new(wrapper);
-                c.arg(&prefix_dir);
-                c.arg(win_path);
-                c
+                (wrapper.to_string_lossy().to_string(), vec![
+                    prefix_dir.to_string_lossy().to_string(),
+                    win_path,
+                ])
             } else {
-                let mut c = tokio::process::Command::new(&wine_binary);
-                c.env("WINEPREFIX", &prefix_dir);
-                c.arg(&game_exe);
-                c
+                (wine_binary.to_string_lossy().to_string(), vec![
+                    game_exe.to_string_lossy().to_string(),
+                ])
             };
-            for a in &extra_args {
+
+            mac_args.extend(extra_args.clone());
+
+            let (final_prog, final_args) = apply_launch_prefix(&mac_prog, mac_args, &config_val);
+            let mut cmd = tokio::process::Command::new(&final_prog);
+            for a in &final_args {
                 cmd.arg(a);
             }
 
             #[cfg(unix)]
             cmd.process_group(0);
 
+            apply_launch_env_vars(&mut cmd, &config_val);
             cmd.current_dir(&working_dir);
             cmd.env("WINEPREFIX", &prefix_dir);
             cmd.env("WINEDEBUG", "-all");
@@ -270,12 +278,16 @@ pub async fn launch_game(
 
         #[cfg(all(not(target_os = "macos"), not(target_os = "linux")))]
         {
-            let mut cmd = tokio::process::Command::new(&game_exe);
-            for a in &extra_args {
+            let exe_str = game_exe.to_string_lossy().to_string();
+            let all_args: Vec<String> = extra_args.clone();
+            let (final_prog, final_args) = apply_launch_prefix(&exe_str, all_args, &config_val);
+            let mut cmd = tokio::process::Command::new(&final_prog);
+            for a in &final_args {
                 cmd.arg(a);
             }
             #[cfg(unix)]
             cmd.process_group(0);
+            apply_launch_env_vars(&mut cmd, &config_val);
             cmd.current_dir(&working_dir);
             let playtime_start = std::time::Instant::now();
             let child = cmd.spawn().map_err(|e| e.to_string())?;
@@ -384,6 +396,93 @@ pub fn get_instance_path(app: AppHandle, instance_id: String) -> String {
 #[tauri::command]
 pub fn get_playtime(app: AppHandle, instance_id: String) -> PlaytimeResponse {
     playtime::get_playtime(&app, &instance_id)
+}
+
+#[tauri::command]
+pub fn get_playtime_daily(app: AppHandle, instance_id: String, days: u64) -> Vec<PlaytimeDayEntry> {
+    playtime::get_playtime_daily(&app, &instance_id, days)
+}
+
+#[tauri::command]
+pub fn backup_instance(app: AppHandle, instance_id: String) -> Result<(), String> {
+    let instance_dir = util::get_instance_working_dir(&app, &instance_id);
+    if !instance_dir.exists() {
+        return Err("Instance not found".into());
+    }
+
+    let backup_name = format!("{}_backup.tar.gz", instance_id);
+    let file = rfd::FileDialog::new()
+        .set_title("Save Instance Backup")
+        .set_file_name(&backup_name)
+        .add_filter("Tar Gzip Archive", &["tar.gz"])
+        .save_file();
+
+    if let Some(path) = file {
+        let parent = instance_dir.parent().ok_or("Invalid instance path")?;
+        let dir_name = instance_dir.file_name().ok_or("Invalid dir name")?;
+
+        let status = std::process::Command::new("tar")
+            .args(["-czf", path.to_str().unwrap(), "-C", parent.to_str().unwrap(), dir_name.to_str().unwrap()])
+            .status()
+            .map_err(|e| format!("Failed to create backup: {}", e))?;
+
+        if status.success() {
+            Ok(())
+        } else {
+            Err("Backup command failed".into())
+        }
+    } else {
+        Err("CANCELED".into())
+    }
+}
+
+#[tauri::command]
+pub fn restore_instance(app: AppHandle) -> Result<String, String> {
+    let file = rfd::FileDialog::new()
+        .set_title("Restore Instance Backup")
+        .add_filter("Tar Gzip Archive", &["tar.gz"])
+        .add_filter("Zip Archive", &["zip"])
+        .pick_file();
+
+    if let Some(path) = file {
+        let instances_dir = util::get_app_dir(&app).join("instances");
+        std::fs::create_dir_all(&instances_dir).map_err(|e| e.to_string())?;
+
+        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+        let status = if ext == "zip" {
+            std::process::Command::new("unzip")
+                .arg("-o")
+                .arg(path.to_str().unwrap())
+                .arg("-d")
+                .arg(instances_dir.to_str().unwrap())
+                .status()
+                .map_err(|e| format!("Failed to extract backup: {}", e))?
+        } else {
+            std::process::Command::new("tar")
+                .args(["-xzf", path.to_str().unwrap(), "-C", instances_dir.to_str().unwrap()])
+                .status()
+                .map_err(|e| format!("Failed to extract backup: {}", e))?
+        };
+
+        if status.success() {
+            let extracted: Vec<_> = std::fs::read_dir(&instances_dir)
+                .map_err(|e| e.to_string())?
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().is_dir() && e.path().join("Minecraft.Client.exe").exists())
+                .collect();
+
+            if let Some(new_instance) = extracted.into_iter().next() {
+                let id = new_instance.file_name().to_string_lossy().to_string();
+                Ok(id)
+            } else {
+                Ok("restored".into())
+            }
+        } else {
+            Err("Restore command failed".into())
+        }
+    } else {
+        Err("CANCELED".into())
+    }
 }
 
 pub fn ensure_server_list(instance_dir: &PathBuf, servers: Vec<McServer>) {
@@ -499,6 +598,30 @@ fn perform_dlc_sync(app: &AppHandle, instance_dir: &PathBuf) -> Result<(), Strin
         None => {
             println!("[DLC Sync] Skipping sync: No DLC source found.");
             Ok(())
+        }
+    }
+}
+
+fn apply_launch_prefix(program: &str, args: Vec<String>, config: &AppConfig) -> (String, Vec<String>) {
+    if let Some(ref prefix) = config.launch_prefix {
+        let trimmed = prefix.trim();
+        if !trimmed.is_empty() {
+            let parts: Vec<&str> = trimmed.split_whitespace().collect();
+            if !parts.is_empty() {
+                let mut all_args: Vec<String> = parts[1..].iter().map(|s| s.to_string()).collect();
+                all_args.push(program.to_string());
+                all_args.extend(args);
+                return (parts[0].to_string(), all_args);
+            }
+        }
+    }
+    (program.to_string(), args)
+}
+
+fn apply_launch_env_vars(cmd: &mut tokio::process::Command, config: &AppConfig) {
+    if let Some(ref env_vars) = config.launch_env_vars {
+        for (k, v) in env_vars {
+            cmd.env(k, v);
         }
     }
 }

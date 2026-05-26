@@ -51,6 +51,7 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     setProfile: configRaw.setProfile,
     customEditions: configRaw.customEditions,
     setCustomEditions: configRaw.setCustomEditions,
+    extraLaunchArgs: configRaw.extraLaunchArgs,
   });
   const skinSync = useSkinSync({ username: configRaw.username, profile: configRaw.profile, editions: gameRaw.editions });
   const audioRaw = useAudioController({
@@ -65,7 +66,8 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     configRaw.username, configRaw.theme, configRaw.layout, configRaw.vfxEnabled,
     configRaw.rpcEnabled, configRaw.musicVol, configRaw.sfxVol, configRaw.isDayTime,
     configRaw.profile, configRaw.linuxRunner, configRaw.perfBoost, configRaw.customEditions,
-    configRaw.legacyMode, configRaw.animationsEnabled, configRaw.mangohudEnabled
+    configRaw.legacyMode, configRaw.animationsEnabled, configRaw.mangohudEnabled,
+    configRaw.extraLaunchArgs, configRaw.launchPrefix, configRaw.launchEnvVars
   ]);
 
   const game = useMemo(() => gameRaw, [
@@ -130,6 +132,9 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
         sfxVol: config.sfxVol,
         legacyMode: config.legacyMode,
         mangohudEnabled: config.mangohudEnabled,
+        extraLaunchArgs: config.extraLaunchArgs,
+        launchPrefix: config.launchPrefix,
+        launchEnvVars: config.launchEnvVars,
       }).catch(console.error);
     }
   }, [
@@ -137,7 +142,8 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     config.perfBoost, config.customEditions, config.profile,
     config.vfxEnabled, config.animationsEnabled,
     config.rpcEnabled, config.musicVol, config.sfxVol, config.legacyMode,
-    config.mangohudEnabled, config.isLoaded
+    config.mangohudEnabled, config.extraLaunchArgs, config.launchPrefix,
+    config.launchEnvVars, config.isLoaded
   ]);
 
   useEffect(() => {

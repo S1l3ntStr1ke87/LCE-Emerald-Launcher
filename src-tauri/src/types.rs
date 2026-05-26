@@ -45,6 +45,9 @@ pub struct AppConfig {
     pub legacy_mode: Option<bool>,
     pub mangohud_enabled: Option<bool>,
     pub saved_servers: Option<Vec<McServer>>,
+    pub extra_launch_args: Option<Vec<String>>,
+    pub launch_prefix: Option<String>,
+    pub launch_env_vars: Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

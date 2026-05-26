@@ -53,3 +53,39 @@ pub fn import_theme(app: AppHandle) -> Result<String, String> {
         Err("CANCELED".into())
     }
 }
+
+#[tauri::command]
+pub fn export_settings(app: AppHandle) -> Result<(), String> {
+    let config = config::load_config_raw(app.clone());
+    let json = serde_json::to_string_pretty(&config).map_err(|e| e.to_string())?;
+    let file = rfd::FileDialog::new()
+        .add_filter("Emerald Settings", &["json"])
+        .set_title("Export Launcher Settings")
+        .set_file_name("emerald_settings.json")
+        .save_file();
+
+    if let Some(path) = file {
+        fs::write(&path, &json).map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err("CANCELED".into())
+    }
+}
+
+#[tauri::command]
+pub fn import_settings(app: AppHandle) -> Result<String, String> {
+    let file = rfd::FileDialog::new()
+        .add_filter("Emerald Settings", &["json"])
+        .set_title("Import Launcher Settings")
+        .pick_file();
+
+    if let Some(path) = file {
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        let config: AppConfig =
+            serde_json::from_str(&content).map_err(|_| "Invalid settings JSON format".to_string())?;
+        config::save_config_raw(&app, &config);
+        Ok("Settings imported successfully! Restart the launcher to apply.".into())
+    } else {
+        Err("CANCELED".into())
+    }
+}

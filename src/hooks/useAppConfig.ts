@@ -19,6 +19,9 @@ export function useAppConfig() {
   const [perfBoost, setPerfBoost] = useState(false);
   const [customEditions, setCustomEditions] = useState<CustomEdition[]>([]);
   const [mangohudEnabled, setMangohudEnabled] = useState(false);
+  const [extraLaunchArgs, setExtraLaunchArgs] = useState<string[] | undefined>();
+  const [launchPrefix, setLaunchPrefix] = useState<string | undefined>();
+  const [launchEnvVars, setLaunchEnvVars] = useState<Record<string, string> | undefined>();
   useEffect(() => {
     TauriService.loadConfig().then((config) => {
       if (config.username) setUsername(config.username);
@@ -35,6 +38,9 @@ export function useAppConfig() {
       if (config.sfxVol !== undefined && config.sfxVol !== null) setSfxVol(config.sfxVol);
       if (config.legacyMode !== undefined) setLegacyMode(config.legacyMode);
       if (config.mangohudEnabled !== undefined) setMangohudEnabled(config.mangohudEnabled);
+      if (config.extraLaunchArgs) setExtraLaunchArgs(config.extraLaunchArgs);
+      if (config.launchPrefix) setLaunchPrefix(config.launchPrefix);
+      if (config.launchEnvVars) setLaunchEnvVars(config.launchEnvVars);
       setIsLoaded(true);
     });
   }, []);
@@ -55,9 +61,12 @@ export function useAppConfig() {
         sfxVol,
         legacyMode,
         mangohudEnabled,
+        extraLaunchArgs,
+        launchPrefix,
+        launchEnvVars,
       }).catch(console.error);
     }
-  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, animationsEnabled, vfxEnabled, rpcEnabled, musicVol, sfxVol, legacyMode, mangohudEnabled, isLoaded]);
+  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, animationsEnabled, vfxEnabled, rpcEnabled, musicVol, sfxVol, legacyMode, mangohudEnabled, extraLaunchArgs, launchPrefix, launchEnvVars, isLoaded]);
 
   return {
     username,
@@ -93,5 +102,11 @@ export function useAppConfig() {
     setHasCompletedSetup,
     mangohudEnabled,
     setMangohudEnabled,
+    extraLaunchArgs,
+    setExtraLaunchArgs,
+    launchPrefix,
+    setLaunchPrefix,
+    launchEnvVars,
+    setLaunchEnvVars,
   };
 }

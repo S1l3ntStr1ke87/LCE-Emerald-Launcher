@@ -41,6 +41,9 @@ export interface AppConfig {
   legacyMode?: boolean;
   mangohudEnabled?: boolean;
   savedServers?: McServer[];
+  extraLaunchArgs?: string[];
+  launchPrefix?: string;
+  launchEnvVars?: Record<string, string>;
 }
 
 export interface ThemePalette {
@@ -74,6 +77,11 @@ export interface PlaytimeResponse {
   daySeconds: number;
 }
 
+export interface PlaytimeDayEntry {
+  label: string;
+  seconds: number;
+}
+
 export class TauriService {
   static async saveConfig(config: AppConfig): Promise<void> {
     return invoke("save_config", { config });
@@ -89,6 +97,14 @@ export class TauriService {
 
   static async importTheme(): Promise<string> {
     return invoke("import_theme");
+  }
+
+  static async exportSettings(): Promise<void> {
+    return invoke("export_settings");
+  }
+
+  static async importSettings(): Promise<string> {
+    return invoke("import_settings");
   }
 
   static async getAvailableRunners(): Promise<Runner[]> {
@@ -293,12 +309,24 @@ export class TauriService {
     return invoke("get_playtime", { instanceId });
   }
 
+  static async getPlaytimeDaily(instanceId: string, days: number): Promise<PlaytimeDayEntry[]> {
+    return invoke("get_playtime_daily", { instanceId, days });
+  }
+
   static async getInstancePath(instanceId: string): Promise<string> {
     return invoke("get_instance_path", { instanceId });
   }
 
   static async readScreenshotAsDataUrl(path: string): Promise<string> {
     return invoke("read_screenshot_as_data_url", { path });
+  }
+
+  static async backupInstance(instanceId: string): Promise<void> {
+    return invoke("backup_instance", { instanceId });
+  }
+
+  static async restoreInstance(): Promise<string> {
+    return invoke("restore_instance");
   }
 
   static async importWorld(

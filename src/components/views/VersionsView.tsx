@@ -624,6 +624,59 @@ const VersionsView = memo(function VersionsView() {
                           onClick={(e) => {
                             e.stopPropagation();
                             playPressSound();
+                            TauriService.backupInstance(edition.instanceId).catch((err) => {
+                              if (err !== "CANCELED") console.error(err);
+                            });
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="w-3.5 h-3.5"
+                          >
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                          </svg>
+                          Backup
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            playPressSound();
+                            setOpenMenuId(null);
+                            try {
+                              await TauriService.restoreInstance();
+                            } catch (err) {
+                              if (err !== "CANCELED") console.error(err);
+                            }
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="w-3.5 h-3.5"
+                          >
+                            <path d="M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" />
+                            <polyline points="12 7 12 12 15 15" />
+                          </svg>
+                          Restore
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playPressSound();
                             setSetUidTargetId(edition.instanceId);
                             setIsSetUidModalOpen(true);
                             setOpenMenuId(null);
