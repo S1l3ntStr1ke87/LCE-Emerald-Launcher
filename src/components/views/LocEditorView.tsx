@@ -63,15 +63,24 @@ export default function LocEditorView() {
   const handleLocStringEdit = (langIdx: number, strIdx: number, isNew: boolean, key: string, value: string) => {
     if (!loc) return;
     playPressSound();
-    const newLoc = { ...loc };
-    const lang = newLoc.languages[langIdx];
-    if (isNew) {
-      lang.strings.push(lang.isStatic ? { value } : { key, value });
-    } else {
-      if (!lang.isStatic) lang.strings[strIdx].key = key;
-      lang.strings[strIdx].value = value;
-    }
-    setLoc(newLoc);
+    setLoc({
+      ...loc,
+      languages: loc.languages.map((lang, lIdx) => {
+        if (lIdx !== langIdx) return lang;
+        if (isNew) {
+          return {
+            ...lang,
+            strings: [...lang.strings, lang.isStatic ? { value } : { key, value }]
+          };
+        }
+        return {
+          ...lang,
+          strings: lang.strings.map((str, sIdx) =>
+            sIdx !== strIdx ? str : { ...str, ...(!lang.isStatic ? { key } : {}), value }
+          )
+        };
+      })
+    });
     setIsLocEditModalOpen(null);
     showNotification(isNew ? "String Added" : "String Updated");
   };
@@ -79,9 +88,12 @@ export default function LocEditorView() {
   const handleLocStringDelete = (langIdx: number, strIdx: number) => {
     if (!loc) return;
     playBackSound();
-    const newLoc = { ...loc };
-    newLoc.languages[langIdx].strings.splice(strIdx, 1);
-    setLoc(newLoc);
+    setLoc({
+      ...loc,
+      languages: loc.languages.map((lang, lIdx) =>
+        lIdx !== langIdx ? lang : { ...lang, strings: lang.strings.filter((_, sIdx) => sIdx !== strIdx) }
+      )
+    });
     showNotification("String Deleted");
   };
 
