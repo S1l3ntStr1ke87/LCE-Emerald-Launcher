@@ -18,6 +18,7 @@ export function useAppConfig() {
   const [linuxRunner, setLinuxRunner] = useState<string | undefined>();
   const [perfBoost, setPerfBoost] = useState(false);
   const [customEditions, setCustomEditions] = useState<CustomEdition[]>([]);
+  const [customizations, setCustomizations] = useState<Record<string, { titleImage?: string; panorama?: string }>>({});
   const [mangohudEnabled, setMangohudEnabled] = useState(false);
   const [extraLaunchArgs, setExtraLaunchArgs] = useState<string[] | undefined>();
   const [launchPrefix, setLaunchPrefix] = useState<string | undefined>();
@@ -30,6 +31,7 @@ export function useAppConfig() {
       if (config.appleSiliconPerformanceBoost !== undefined)
         setPerfBoost(config.appleSiliconPerformanceBoost);
       if (config.customEditions) setCustomEditions(config.customEditions);
+      if (config.customizations) setCustomizations(config.customizations);
       if (config.profile) setProfile(config.profile);
       if (config.vfxEnabled !== undefined) setVfxEnabled(config.vfxEnabled);
       if (config.animationsEnabled !== undefined) setAnimationsEnabled(config.animationsEnabled);
@@ -54,6 +56,7 @@ export function useAppConfig() {
         appleSiliconPerformanceBoost: perfBoost,
         profile,
         customEditions,
+        customizations,
         animationsEnabled,
         vfxEnabled,
         rpcEnabled,
@@ -66,7 +69,7 @@ export function useAppConfig() {
         launchEnvVars,
       }).catch(console.error);
     }
-  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, animationsEnabled, vfxEnabled, rpcEnabled, musicVol, sfxVol, legacyMode, mangohudEnabled, extraLaunchArgs, launchPrefix, launchEnvVars, isLoaded]);
+  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, customizations, animationsEnabled, vfxEnabled, rpcEnabled, musicVol, sfxVol, legacyMode, mangohudEnabled, extraLaunchArgs, launchPrefix, launchEnvVars, isLoaded]);
 
   return {
     username,
@@ -97,6 +100,8 @@ export function useAppConfig() {
     setPerfBoost,
     customEditions,
     setCustomEditions,
+    customizations,
+    setCustomizations,
     isLoaded,
     hasCompletedSetup,
     setHasCompletedSetup,

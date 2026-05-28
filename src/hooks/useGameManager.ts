@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type Dispatch, type SetStateAction } from "react";
 import { TauriService, type CustomEdition } from "../services/TauriService";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Edition } from "../types/edition";
@@ -77,6 +77,8 @@ interface GameManagerProps {
   setProfile: (id: string) => void;
   customEditions: CustomEdition[];
   setCustomEditions: (editions: CustomEdition[]) => void;
+  customizations: Record<string, { titleImage?: string; panorama?: string }>;
+  setCustomizations: Dispatch<SetStateAction<Record<string, { titleImage?: string; panorama?: string }>>>;
   extraLaunchArgs?: string[];
 }
 
@@ -102,6 +104,8 @@ export function useGameManager({
   setProfile,
   customEditions,
   setCustomEditions,
+  customizations,
+  setCustomizations,
   extraLaunchArgs,
 }: GameManagerProps) {
   const [installs, setInstalls] = useState<string[]>([]);
@@ -126,7 +130,6 @@ export function useGameManager({
   >({});
   const branchesFetched = useRef<Set<string>>(new Set());
   const initialBranchesSet = useRef(false);
-
   useEffect(() => {
     if (initialBranchesSet.current || !profile) return;
     BASE_EDITIONS.forEach((e) => {
@@ -253,7 +256,7 @@ export function useGameManager({
           url = `${baseUrl}/releases/download/${branchToUse}/${filename}`;
         }
 
-        return {
+        const edition = {
           ...e,
           url,
           branches: availableBranches,
@@ -261,10 +264,20 @@ export function useGameManager({
           instanceId:
             selectedBranch === "Stable" ? e.id : `${e.id}_${selectedBranch}`,
         };
+        const custom = customizations[e.id];
+        if (custom?.titleImage) edition.titleImage = custom.titleImage;
+        if (custom?.panorama) edition.panorama = custom.panorama;
+        return edition;
       }),
-      ...customEditions.map((e) => ({ ...e, instanceId: e.id })),
+      ...customEditions.map((e) => {
+        const edition: Edition = { ...e, instanceId: e.id };
+        const custom = customizations[e.id];
+        if (custom?.titleImage) edition.titleImage = custom.titleImage;
+        if (custom?.panorama) edition.panorama = custom.panorama;
+        return edition;
+      }),
     ];
-  }, [customEditions, dynamicUrls, branches, selectedBranches]);
+  }, [customEditions, dynamicUrls, branches, selectedBranches, customizations]);
 
   const checkInstalls = useCallback(async () => {
     const results = await Promise.all(
@@ -349,7 +362,11 @@ export function useGameManager({
       } catch (e: unknown) {
         console.error(e);
         setError(
-          e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to download runner",
+          e instanceof Error
+            ? e.message
+            : typeof e === "string"
+              ? e
+              : "Failed to download runner",
         );
       } finally {
         setIsRunnerDownloading(false);
@@ -376,7 +393,11 @@ export function useGameManager({
       } catch (e: unknown) {
         console.error(e);
         setError(
-          e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to install version",
+          e instanceof Error
+            ? e.message
+            : typeof e === "string"
+              ? e
+              : "Failed to install version",
         );
         setDownloadProgress(null);
         setDownloadingId(null);
@@ -412,11 +433,19 @@ export function useGameManager({
     setIsGameRunning(true);
     try {
       getCurrentWindow().minimize();
-      await TauriService.launchGame(profile, PARTNERSHIP_SERVERS, extraLaunchArgs);
+      await TauriService.launchGame(
+        profile,
+        PARTNERSHIP_SERVERS,
+        extraLaunchArgs,
+      );
     } catch (e: unknown) {
       console.error(e);
       setError(
-        e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to launch game",
+        e instanceof Error
+          ? e.message
+          : typeof e === "string"
+            ? e
+            : "Failed to launch game",
       );
     } finally {
       setIsGameRunning(false);
@@ -474,6 +503,19 @@ export function useGameManager({
     [customEditions, setCustomEditions],
   );
 
+  const updateCustomization = useCallback(
+    (
+      instanceId: string,
+      updates: { titleImage?: string; panorama?: string },
+    ) => {
+      setCustomizations((prev) => ({
+        ...prev,
+        [instanceId]: { ...prev[instanceId], ...updates },
+      }));
+    },
+    [],
+  );
+
   const addToSteam = useCallback(
     async (
       id: string,
@@ -491,7 +533,11 @@ export function useGameManager({
       } catch (e: unknown) {
         console.error(e);
         setError(
-          e instanceof Error ? e.message : typeof e === "string" ? e : "Failed to add to Steam",
+          e instanceof Error
+            ? e.message
+            : typeof e === "string"
+              ? e
+              : "Failed to add to Steam",
         );
       }
     },
@@ -525,5 +571,7 @@ export function useGameManager({
     updatesAvailable,
     addToSteam,
     cycleBranch,
+    customizations,
+    updateCustomization,
   };
 }

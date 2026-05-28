@@ -10,7 +10,10 @@ const PanoramaBackground = React.memo(({ profile, isDay }: PanoramaProps) => {
   const { isWindowVisible } = useUI();
   const baseId = profile;
   const profileId = baseId ? baseId : "vanilla_tu19";
-  const currentPanorama = `/panorama/${profileId}_Panorama_Background_${isDay ? "Day" : "Night"}.png`;
+  const isCustomUrl = profile.startsWith("data:") || profile.startsWith("blob:");
+  const currentPanorama = isCustomUrl
+    ? profile
+    : `/panorama/${profileId}_Panorama_Background_${isDay ? "Day" : "Night"}.png`;
   const [bgWidth, setBgWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 

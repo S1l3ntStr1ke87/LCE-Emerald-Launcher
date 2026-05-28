@@ -51,6 +51,8 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     setProfile: configRaw.setProfile,
     customEditions: configRaw.customEditions,
     setCustomEditions: configRaw.setCustomEditions,
+    customizations: configRaw.customizations,
+    setCustomizations: configRaw.setCustomizations,
     extraLaunchArgs: configRaw.extraLaunchArgs,
   });
   const skinSync = useSkinSync({ username: configRaw.username, profile: configRaw.profile, editions: gameRaw.editions });
@@ -78,7 +80,8 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     gameRaw.updatesAvailable, gameRaw.addToSteam, gameRaw.steamSuccessMessage,
     gameRaw.cycleBranch, gameRaw.toggleInstall, gameRaw.checkInstalls,
     gameRaw.handleLaunch, gameRaw.stopGame, gameRaw.addCustomEdition,
-    gameRaw.deleteCustomEdition, gameRaw.downloadRunner
+    gameRaw.deleteCustomEdition, gameRaw.downloadRunner,
+    gameRaw.customizations, gameRaw.updateCustomization,
   ]);
 
   const audio = useMemo(() => audioRaw, [

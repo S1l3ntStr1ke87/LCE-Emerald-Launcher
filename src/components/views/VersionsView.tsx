@@ -5,6 +5,7 @@ import CustomTUModal from "../modals/CustomTUModal";
 import SetUidModal from "../modals/SetUidModal";
 import ImportWorldModal from "../modals/ImportWorldModal";
 import PlaytimeModal from "../modals/PlaytimeModal";
+import CustomizeModal from "../modals/CustomizeModal";
 import {
   useUI,
   useConfig,
@@ -77,6 +78,8 @@ const VersionsView = memo(function VersionsView() {
     updatesAvailable,
     addToSteam,
     cycleBranch,
+    customizations,
+    updateCustomization,
   } = useGame();
   const { isDayTime } = useConfig();
   const [focusIndex, setFocusIndex] = useState<number>(0);
@@ -89,6 +92,8 @@ const VersionsView = memo(function VersionsView() {
   const [importWorldTarget, setImportWorldTarget] = useState<{ id: string; name: string } | null>(null);
   const [isPlaytimeModalOpen, setIsPlaytimeModalOpen] = useState(false);
   const [playtimeTarget, setPlaytimeTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
+  const [customizeTarget, setCustomizeTarget] = useState<Edition | null>(null);
   const [playtimeMap, setPlaytimeMap] = useState<Record<string, PlaytimeResponse>>({});
   const [initialPath, setInitialPath] = useState<string>("");
   const [hoveredBtn, setHoveredBtn] = useState<{
@@ -677,6 +682,29 @@ const VersionsView = memo(function VersionsView() {
                           onClick={(e) => {
                             e.stopPropagation();
                             playPressSound();
+                            setCustomizeTarget(edition);
+                            setIsCustomizeModalOpen(true);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="w-3.5 h-3.5"
+                          >
+                            <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                          Customize
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playPressSound();
                             setSetUidTargetId(edition.instanceId);
                             setIsSetUidModalOpen(true);
                             setOpenMenuId(null);
@@ -885,6 +913,21 @@ const VersionsView = memo(function VersionsView() {
         playBackSound={playBackSound}
         instanceId={playtimeTarget?.id ?? ""}
         instanceName={playtimeTarget?.name ?? ""}
+      />
+
+      <CustomizeModal
+        isOpen={isCustomizeModalOpen}
+        onClose={() => { setIsCustomizeModalOpen(false); setCustomizeTarget(null); }}
+        playPressSound={playPressSound}
+        playBackSound={playBackSound}
+        editionName={customizeTarget?.name ?? ""}
+        currentTitleImage={customizeTarget ? customizations[customizeTarget.instanceId]?.titleImage || customizeTarget.titleImage : undefined}
+        currentPanorama={customizeTarget ? customizations[customizeTarget.instanceId]?.panorama || customizeTarget.panorama : undefined}
+        onSave={(updates) => {
+          if (customizeTarget) {
+            updateCustomization(customizeTarget.instanceId, updates);
+          }
+        }}
       />
 
       {deleteConfirmEdition && (

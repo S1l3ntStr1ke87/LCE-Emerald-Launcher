@@ -44,6 +44,7 @@ export interface AppConfig {
   extraLaunchArgs?: string[];
   launchPrefix?: string;
   launchEnvVars?: Record<string, string>;
+  customizations?: Record<string, { titleImage?: string; panorama?: string }>;
 }
 
 export interface ThemePalette {
