@@ -68,7 +68,7 @@ jobs:
         with:
           uploadPlainBinary: true
           tagName: v__VERSION__
-          releaseName: "v__VERSION__"
+          releaseName: "Emerald v__VERSION__"
           releaseBody: |
             # PLACEHOLDER. CHANGE ME
           releaseDraft: true
@@ -99,5 +99,6 @@ jobs:
         with:
           tag_name: v${{ needs.get-version.outputs.version }}
           files: emerald.flatpak
+          draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
