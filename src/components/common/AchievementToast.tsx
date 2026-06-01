@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAudio } from "../../context/LauncherContext";
 
 interface AchievementToastProps {
   message: string | null;
@@ -16,14 +17,24 @@ export function AchievementToast({
   title = "Error!",
   variant = "error",
 }: AchievementToastProps) {
+  const { playSfx } = useAudio();
+
   useEffect(() => {
     if (message) {
+      if (variant === "update") {
+        playSfx("notification.ogg");
+      } else {
+        playSfx("in.ogg");
+      }
       const timer = setTimeout(() => {
         onClose();
       }, 8000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        playSfx("out.ogg");
+      };
     }
-  }, [message, onClose]);
+  }, [message, onClose, variant, playSfx]);
 
   const getIcon = () => {
     if (variant === "update") {
