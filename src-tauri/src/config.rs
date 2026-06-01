@@ -25,6 +25,7 @@ pub fn load_config_raw(app: AppHandle) -> AppConfig {
         animations_enabled: Some(true),
         vfx_enabled: Some(true),
         rpc_enabled: Some(true),
+        start_fullscreen: Some(true),
         music_vol: Some(50),
         sfx_vol: Some(100),
         legacy_mode: Some(false),

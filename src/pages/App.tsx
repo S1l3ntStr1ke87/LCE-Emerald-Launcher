@@ -20,6 +20,7 @@ import SkinViewer from "../components/common/SkinViewer";
 import TeamModal from "../components/modals/TeamModal";
 import PanoramaBackground from "../components/common/PanoramaBackground";
 import { ClickParticles } from "../components/common/ClickParticles";
+import { CinematicIntro } from "../components/common/CinematicIntro";
 import { DownloadOverlay } from "../components/layout/DownloadOverlay";
 import { AchievementToast } from "../components/common/AchievementToast";
 import {
@@ -37,8 +38,6 @@ export default function App() {
   const {
     showIntro,
     setShowIntro,
-    logoAnimDone,
-    setLogoAnimDone,
     activeView,
     setActiveView,
     isUiHidden,
@@ -61,11 +60,21 @@ export default function App() {
     clearFriendRequestMessage,
     clearGameInviteMessage,
   } = useLceLiveNotifications();
-  const [showSetup, setShowSetup] = useState(true);
+  const [showSetup, setShowSetup] = useState(false);
   const [displayIsDay, setDisplayIsDay] = useState(config.isDayTime);
+  const [isSetupChecked, setIsSetupChecked] = useState(false);
+  
   useEffect(() => {
     setDisplayIsDay(config.isDayTime);
   }, [config.isDayTime]);
+
+  useEffect(() => {
+    if (config.isLoaded) {
+      const setupCompleted = localStorage.getItem("lce-setup-completed") === "true";
+      setShowSetup(!setupCompleted);
+      setIsSetupChecked(true);
+    }
+  }, [config.isLoaded]);
 
   const selectedEdition = game.editions.find(
     (e: Edition) => e.instanceId === config.profile,
@@ -75,19 +84,6 @@ export default function App() {
   const titleImage = hasAnyInstall
     ? selectedEdition?.titleImage || "/images/MenuTitle.png"
     : "/images/MenuTitle.png";
-
-  useEffect(() => {
-    if (config.isLoaded) {
-      const setupCompleted =
-        localStorage.getItem("lce-setup-completed") === "true";
-      setShowSetup(!setupCompleted);
-    }
-  }, [config.isLoaded]);
-
-  useEffect(() => {
-    setTimeout(() => setShowIntro(false), 2400);
-    setTimeout(() => setLogoAnimDone(true), 3400);
-  }, [showSetup]);
 
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => e.preventDefault();
@@ -108,6 +104,36 @@ export default function App() {
     exit: { opacity: 0 },
     transition: { duration: config.animationsEnabled ? 0.8 : 0 },
   };
+
+  if (!config.isLoaded || !isSetupChecked) {
+    return <div className="w-screen h-screen bg-black" />;
+  }
+
+  if (showSetup) {
+    return (
+      <div className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}>
+        <SetupView
+          onComplete={() => {
+            setShowSetup(false);
+            setShowIntro(true);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (showIntro) {
+    return (
+      <div className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}>
+        <CinematicIntro
+          onComplete={() => {
+            setShowIntro(false);
+          }}
+          startMusic={audio.startMusic}
+        />
+      </div>
+    );
+  }
 
   return (
     <MotionConfig transition={config.animationsEnabled ? {} : { duration: 0 }}>
@@ -139,6 +165,7 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         </div>
+
         {config.vfxEnabled && <ClickParticles />}
 
         <AnimatePresence>
@@ -197,39 +224,13 @@ export default function App() {
         />
 
         <AnimatePresence>
-          {showSetup ? (
-            <SetupView
-              key="setup"
-              onComplete={() => {
-                setShowSetup(false);
-                setShowIntro(true);
-              }}
-            />
-          ) : showIntro ? (
-            <motion.div
-              key="intro"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-1 items-center justify-center z-10 pointer-events-none"
-            >
-              <motion.img
-                layoutId="mainLogo"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                src={titleImage}
-                className="w-3/4 max-w-3xl"
-                style={{ imageRendering: "pixelated" }}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col h-full z-10 w-full relative"
-            >
-              <AnimatePresence>
-                {logoAnimDone && (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col h-full z-10 w-full relative"
+          >
+            <AnimatePresence>
                   <>
                     {!config.legacyMode && (
                       <motion.div
@@ -321,7 +322,6 @@ export default function App() {
                         </motion.div>
                       )}
                   </>
-                )}
               </AnimatePresence>
 
               <div className="shrink-0 flex justify-center py-4 relative w-full pt-4">
@@ -338,7 +338,6 @@ export default function App() {
                     style={{ imageRendering: "pixelated" }}
                   />
                   <AnimatePresence>
-                    {logoAnimDone && (
                       <>
                         <motion.div
                           key="splash"
@@ -367,14 +366,13 @@ export default function App() {
                             </motion.div>
                           )}
                       </>
-                    )}
                   </AnimatePresence>
                 </div>
               </div>
 
               <main className="flex-1 w-full relative">
                 <div
-                  className={`w-full h-full flex flex-col items-center justify-center ${!logoAnimDone || isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+                  className={`w-full h-full flex flex-col items-center justify-center ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
                 >
                   <AnimatePresence mode="wait">
                     {activeView === "main" && (
@@ -442,7 +440,6 @@ export default function App() {
               </main>
 
               <AnimatePresence>
-                {logoAnimDone && (
                   <motion.footer
                     key="footer"
                     {...uiFade}
@@ -460,10 +457,8 @@ export default function App() {
                       {useUI().connected && "CONTROLLER CONNECTED"}
                     </div>
                   </motion.footer>
-                )}
               </AnimatePresence>
             </motion.div>
-          )}
         </AnimatePresence>
 
         <AchievementToast

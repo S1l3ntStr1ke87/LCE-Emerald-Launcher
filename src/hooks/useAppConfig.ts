@@ -8,6 +8,7 @@ export function useAppConfig() {
   const [vfxEnabled, setVfxEnabled] = useLocalStorage("lce-vfx", true);
   const [animationsEnabled, setAnimationsEnabled] = useLocalStorage("lce-animations", true);
   const [rpcEnabled, setRpcEnabled] = useLocalStorage("discord-rpc", true);
+  const [startFullscreen, setStartFullscreen] = useLocalStorage("lce-fullscreen", true);
   const [musicVol, setMusicVol] = useLocalStorage("lce-music", 50);
   const [sfxVol, setSfxVol] = useLocalStorage("lce-sfx", 100);
   const [isDayTime, setIsDayTime] = useLocalStorage("lce-daytime", true);
@@ -36,6 +37,7 @@ export function useAppConfig() {
       if (config.vfxEnabled !== undefined) setVfxEnabled(config.vfxEnabled);
       if (config.animationsEnabled !== undefined) setAnimationsEnabled(config.animationsEnabled);
       if (config.rpcEnabled !== undefined) setRpcEnabled(config.rpcEnabled);
+      if (config.startFullscreen !== undefined) setStartFullscreen(config.startFullscreen);
       if (config.musicVol !== undefined && config.musicVol !== null) setMusicVol(config.musicVol);
       if (config.sfxVol !== undefined && config.sfxVol !== null) setSfxVol(config.sfxVol);
       if (config.legacyMode !== undefined) setLegacyMode(config.legacyMode);
@@ -60,6 +62,7 @@ export function useAppConfig() {
         animationsEnabled,
         vfxEnabled,
         rpcEnabled,
+        startFullscreen,
         musicVol,
         sfxVol,
         legacyMode,
@@ -69,7 +72,7 @@ export function useAppConfig() {
         launchEnvVars,
       }).catch(console.error);
     }
-  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, customizations, animationsEnabled, vfxEnabled, rpcEnabled, musicVol, sfxVol, legacyMode, mangohudEnabled, extraLaunchArgs, launchPrefix, launchEnvVars, isLoaded]);
+  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, customizations, animationsEnabled, vfxEnabled, rpcEnabled, startFullscreen, musicVol, sfxVol, legacyMode, mangohudEnabled, extraLaunchArgs, launchPrefix, launchEnvVars, isLoaded]);
 
   return {
     username,
@@ -84,6 +87,8 @@ export function useAppConfig() {
     setAnimationsEnabled,
     rpcEnabled,
     setRpcEnabled,
+    startFullscreen,
+    setStartFullscreen,
     musicVol: musicVol ?? 50,
     setMusicVol,
     sfxVol: sfxVol ?? 100,

@@ -97,6 +97,14 @@ pub fn run() {
             relay::join_game,
         ])
         .setup(|app| {
+            let app_handle = app.handle().clone();
+            let config = config::load_config_raw(app_handle.clone());
+            if config.start_fullscreen.unwrap_or(true) {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.set_fullscreen(true);
+                }
+            }
+
             let args: Vec<String> = std::env::args().collect();
             if args.len() > 1 && !args[1].starts_with('-') {
                 let instance_id = args[1].clone();

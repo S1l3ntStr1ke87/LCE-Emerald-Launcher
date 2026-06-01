@@ -59,7 +59,6 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
   const audioRaw = useAudioController({
     musicVol: configRaw.musicVol,
     sfxVol: configRaw.sfxVol,
-    showIntro,
     isGameRunning: gameRaw.isGameRunning,
     isWindowVisible,
   });

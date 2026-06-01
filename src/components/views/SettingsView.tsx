@@ -28,6 +28,8 @@ const SettingsView = memo(function SettingsView() {
     setPerfBoost,
     rpcEnabled,
     setRpcEnabled,
+    startFullscreen,
+    setStartFullscreen,
     legacyMode,
     setLegacyMode,
     mangohudEnabled,
@@ -98,6 +100,11 @@ const SettingsView = memo(function SettingsView() {
   const handleRpcToggle = () => {
     playPressSound();
     setRpcEnabled(!rpcEnabled);
+  };
+
+  const handleFullscreenToggle = () => {
+    playPressSound();
+    setStartFullscreen(!startFullscreen);
   };
 
   const handleLegacyToggle = () => {
@@ -396,6 +403,12 @@ const SettingsView = memo(function SettingsView() {
         },
       });
     } else if (currentSubMenu === "launcher") {
+      items.push({
+        id: "fullscreen",
+        label: `Start in Fullscreen: ${startFullscreen ? "ON" : "OFF"}`,
+        type: "button",
+        onClick: handleFullscreenToggle,
+      });
       items.push({
         id: "rpc",
         label: `Discord RPC: ${rpcEnabled ? "ON" : "OFF"}`,

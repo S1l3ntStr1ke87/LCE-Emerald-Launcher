@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const TRACKS = [
+  "music/06. Moog City 2.opus",
   "music/Blind Spots.ogg",
   "music/Key.ogg",
   "music/Living Mice.ogg",
@@ -173,7 +174,6 @@ const SPLASHES = [
 interface AudioControllerProps {
   musicVol: number;
   sfxVol: number;
-  showIntro: boolean;
   isGameRunning: boolean;
   isWindowVisible: boolean;
 }
@@ -181,7 +181,6 @@ interface AudioControllerProps {
 export function useAudioController({
   musicVol,
   sfxVol,
-  showIntro,
   isGameRunning,
   isWindowVisible,
 }: AudioControllerProps) {
@@ -404,10 +403,18 @@ export function useAudioController({
     setSplashIndex(newIndex);
   }, [playSplashSound, splashIndex]);
 
+  const [isMusicStarted, setIsMusicStarted] = useState(false);
+
+  const startMusic = useCallback(() => {
+    setIsMusicStarted(true);
+  }, []);
+
   useEffect(() => {
-    if (showIntro) return;
+    if (!isMusicStarted) return;
 
     const loadAndPlay = async () => {
+      await ensureAudioContextReady();
+      
       let buffer = trackBuffersRef.current.get(currentTrack);
       if (!buffer) {
         buffer = await loadAudioBuffer(resolveAudioUrl(TRACKS[currentTrack]));
@@ -416,35 +423,16 @@ export function useAudioController({
         }
       }
       if (buffer) {
-        await playMusicBuffer(buffer);
-      }
-    };
-
-    loadAndPlay();
-
-    return () => {
-      stopMusic();
-    };
-  }, [showIntro, currentTrack, loadAudioBuffer, playMusicBuffer, stopMusic]);
-
-  useEffect(() => {
-    if (!audioContextRef.current || showIntro) return;
-
-    const loadAndPlay = async () => {
-      let buffer = trackBuffersRef.current.get(currentTrack);
-      if (!buffer) {
-        buffer = await loadAudioBuffer(resolveAudioUrl(TRACKS[currentTrack]));
-        if (buffer) {
-          trackBuffersRef.current.set(currentTrack, buffer);
+        if (currentTrack === 0) {
+          await playMusicBuffer(buffer);
+        } else {
+          await fadeInMusic(buffer, targetVolumeRef.current, 500);
         }
       }
-      if (buffer) {
-        await fadeInMusic(buffer, musicVol / 100, 500);
-      }
     };
 
     loadAndPlay();
-  }, [currentTrack, showIntro, musicVol, loadAudioBuffer, fadeInMusic]);
+  }, [isMusicStarted, currentTrack, loadAudioBuffer, playMusicBuffer, fadeInMusic, ensureAudioContextReady]);
 
   useEffect(() => {
     const shouldPause = isGameRunning || !isWindowVisible;
@@ -517,5 +505,6 @@ export function useAudioController({
     playSfx,
     tracks: TRACKS,
     splashes: SPLASHES,
+    startMusic,
   };
 }

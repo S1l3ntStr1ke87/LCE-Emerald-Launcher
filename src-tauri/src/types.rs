@@ -40,6 +40,7 @@ pub struct AppConfig {
     pub animations_enabled: Option<bool>,
     pub vfx_enabled: Option<bool>,
     pub rpc_enabled: Option<bool>,
+    pub start_fullscreen: Option<bool>,
     pub music_vol: Option<u32>,
     pub sfx_vol: Option<u32>,
     pub legacy_mode: Option<bool>,

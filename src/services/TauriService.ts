@@ -36,6 +36,7 @@ export interface AppConfig {
   animationsEnabled?: boolean;
   vfxEnabled?: boolean;
   rpcEnabled?: boolean;
+  startFullscreen?: boolean;
   musicVol?: number;
   sfxVol?: number;
   legacyMode?: boolean;
