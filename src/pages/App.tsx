@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import "../css/App.css";
 import HomeView from "../components/views/HomeView";
@@ -68,6 +68,10 @@ export default function App() {
   const [showSetup, setShowSetup] = useState(false);
   const [isSetupChecked, setIsSetupChecked] = useState(false);
   const displayIsDay = config.isDayTime;
+
+  const clearError = useCallback(() => game.setError(null), [game]);
+  const clearGameUpdate = useCallback(() => game.setGameUpdateMessage(null), [game]);
+  const clearSteamSuccess = useCallback(() => game.setSteamSuccessMessage(null), [game]);
   
 
   useEffect(() => {
@@ -179,7 +183,7 @@ export default function App() {
 
         <AchievementToast
           message={game.error}
-          onClose={() => game.setError(null)}
+          onClose={clearError}
         />
 
         <AchievementToast
@@ -197,9 +201,9 @@ export default function App() {
 
         <AchievementToast
           message={game.gameUpdateMessage}
-          onClose={() => game.setGameUpdateMessage(null)}
+          onClose={clearGameUpdate}
           onClick={() => {
-            game.setGameUpdateMessage(null);
+            clearGameUpdate();
             setActiveView("versions");
           }}
           title="Game Update Available!"
@@ -208,7 +212,7 @@ export default function App() {
 
         <AchievementToast
           message={game.steamSuccessMessage}
-          onClose={() => game.setSteamSuccessMessage(null)}
+          onClose={clearSteamSuccess}
           title="Steam Integration"
           variant="steam"
         />
