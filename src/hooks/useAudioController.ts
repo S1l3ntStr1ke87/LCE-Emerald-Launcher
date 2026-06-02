@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { SPLASHES } from "../data/splashes";
 
 const TRACKS = [
-  "music/06. Moog City 2.opus",
+  "music/Moog City 2.opus",
   "music/Blind Spots.ogg",
   "music/Key.ogg",
   "music/Living Mice.ogg",
