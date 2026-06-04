@@ -1,4 +1,4 @@
-import { useEffect, memo } from "react";
+import { useEffect, memo, useState } from "react";
 import { motion } from "framer-motion";
 import { useUI, useAudio } from "../../context/LauncherContext";
 
@@ -15,12 +15,23 @@ interface CreditCategory {
         url: string;
       }[];
     }[];
+    subprojects?: {
+      name: string;
+      roles: {
+        role: string;
+        members: {
+          name: string;
+          url: string;
+        }[];
+      }[];
+    }[];
   }[];
 }
 
 const CreditsView = memo(function CreditsView() {
   const { setActiveView } = useUI();
-  const { playBackSound } = useAudio();
+  const { playPressSound } = useAudio();
+  const [isHovered, setIsHovered] = useState(false);
 
   const credits: CreditCategory[] = [
     {
@@ -75,6 +86,50 @@ const CreditsView = memo(function CreditsView() {
               ],
             },
           ],
+          subprojects: [
+            {
+              name: "neoStudios LCE",
+              roles: [
+                {
+                  role: "Active Maintainer",
+                  members: [
+                    { name: "Andi_pog", url: "https://github.com/Andi-pog" },
+                    { name: "LordCambion", url: "https://github.com/LordCambion" },
+                    { name: "neoapps", url: "https://github.com/neoapps-dev" },
+                    { name: "tranqlmao", url: "https://github.com/tranqlmao" },
+                  ],
+                },
+                {
+                  role: "Contributors",
+                  members: [
+                    { name: "Fireblade", url: "#" },
+                    { name: "Rockefeler", url: "#" },
+                    { name: "CDevJoud", url: "#" },
+                    { name: "Rhys Evolution", url: "#" },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "Minigames Division (LMRP)",
+              roles: [
+                {
+                  role: "Founders",
+                  members: [
+                    { name: "700", url: "#" },
+                    { name: "DankMan01", url: "#" },
+                  ],
+                },
+                {
+                  role: "Contributors",
+                  members: [
+                    { name: "xxxtentactcles", url: "#" },
+                    { name: "salad", url: "#" },
+                  ],
+                },
+              ],
+            },
+          ],
         },
         {
           name: "360 Revived",
@@ -125,28 +180,36 @@ const CreditsView = memo(function CreditsView() {
           ],
         },
       ],
-    }
+    },
     {
       category: "SPECIAL THANKS",
       icon: "",
       subcategories: [
         {
           name: "Discord Booster",
-          icon: "/images/discord.png",
+          icon: "/images/Nitro Boost.png",
           roles: [
             {
               role: "",
-              members: [],
+              members: [
+                { name: "mr_anilex", url: "#" },
+                { name: "faisal508508", url: "#" },
+                { name: "dr.av", url: "#" },
+                { name: "alreadywarned", url: "#" },
+                { name: "andrewjcf", url: "#" },
+              ],
             },
           ],
         },
         {
-          name: "Donors",
-          icon: "",
+          name: "Ko-fi Supporters",
+          icon: "/images/kofi_symbol.svg",
           roles: [
             {
               role: "",
-              members: [],
+              members: [
+                { name: "faisal508508", url: "#" },
+              ],
             },
           ],
         },
@@ -158,38 +221,41 @@ const CreditsView = memo(function CreditsView() {
     const handleKey = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === "INPUT") return;
       if (e.key === "Escape") {
-        playBackSound();
+        playPressSound();
         setActiveView("main");
       }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [setActiveView, playBackSound]);
+  }, [setActiveView, playPressSound]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      <button
+        onClick={() => {
+          playPressSound();
+          setActiveView("main");
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="fixed bottom-8 left-8 z-50 h-10 flex items-center justify-center gap-2 px-4 text-xl mc-text-shadow outline-none border-none"
+        style={{
+          backgroundImage: isHovered ? "url('/images/button_highlighted.png')" : "url('/images/Button_Background.png')",
+          backgroundSize: "100% 100%",
+          imageRendering: "pixelated",
+          color: isHovered ? "#FFFF55" : "white",
+        }}
+      >
+        Back to Menu
+      </button>
+
       <motion.div
         initial={{ y: "50%" }}
         animate={{ y: "-200%" }}
-        transition={{ duration: 30, ease: "linear" }}
+        transition={{ duration: 45, ease: "linear" }}
         onAnimationComplete={() => setActiveView("main")}
         className="flex flex-col items-center justify-center space-y-8 py-20"
       >
-        <button
-          onClick={() => {
-            playBackSound();
-            setActiveView("main");
-          }}
-          className="absolute bottom-8 right-8 h-10 flex items-center justify-center gap-2 px-4 text-xl mc-text-shadow transition-colors outline-none border-none text-white"
-          style={{
-            backgroundImage: "url('/images/Button_Background.png')",
-            backgroundSize: "100% 100%",
-            imageRendering: "pixelated",
-          }}
-        >
-          Back to Menu
-        </button>
-
         {credits.map((cat) => (
           <div key={cat.category} className="flex flex-col items-center gap-6">
             <h2 
@@ -250,6 +316,40 @@ const CreditsView = memo(function CreditsView() {
                         </div>
                       </div>
                     ))}
+                    {sub.subprojects && sub.subprojects.length > 0 && (
+                      <div className="flex flex-col items-center gap-3 mt-4">
+                        {sub.subprojects.map((project) => (
+                          <div key={project.name} className="flex flex-col items-center gap-2">
+                            <h4 className="text-white/60 text-lg mc-text-shadow uppercase tracking-wide text-center">
+                              {project.name}
+                            </h4>
+                            {project.roles.map((role) => (
+                              <div key={role.role} className="flex flex-col items-center gap-2">
+                                {role.role && (
+                                  <h5 className="text-white/50 text-base mc-text-shadow uppercase tracking-wide text-center">
+                                    {role.role}
+                                  </h5>
+                                )}
+                                <div className="flex flex-col items-center gap-2">
+                                  {role.members.map((member) => (
+                                    <a
+                                      key={member.name}
+                                      href={member.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[#e2cc4c] text-xl mc-text-shadow font-medium cursor-pointer"
+                                      style={{ textShadow: "2px 2px 0px #000000" }}
+                                    >
+                                      {member.name}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -278,7 +378,7 @@ const CreditsView = memo(function CreditsView() {
 
         <div className="flex flex-col items-center gap-2 mt-8">
           <p className="text-white/60 text-sm mc-text-shadow text-center uppercase tracking-wider">
-            Not affiliated with Mojang, Microsoft, or 4J Studios
+            Minecraft is a trademark of Mojang Synergies AB. This project is not affiliated with, endorsed by, sponsored by, or specifically approved by Mojang, Microsoft, or 4J Studios.
           </p>
         </div>
       </motion.div>
