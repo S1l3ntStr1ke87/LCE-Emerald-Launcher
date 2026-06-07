@@ -155,6 +155,19 @@ body {
     }
 }
 
+@keyframes blink-caret {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0;
+    }
+}
+
+.blink-caret {
+    animation: blink-caret 1s step-end infinite;
+}
+
 .particle-burst {
     animation: sga-burst 0.8s ease-out forwards;
     filter: drop-shadow(0 0 8px rgba(180, 100, 255, 0.9));
