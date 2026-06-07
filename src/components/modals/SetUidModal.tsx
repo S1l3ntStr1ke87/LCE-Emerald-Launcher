@@ -225,7 +225,7 @@ export default function SetUidModal({
                         setSelectedInstance(i.instanceId);
                         setIsDropdownOpen(false);
                       }}
-                      className="px-3 py-2 text-white text-sm cursor-pointer hover:bg-white/20 transition-colors truncate font-['Mojangles']"
+                      className="px-3 py-2 text-white text-sm cursor-pointer truncate font-['Mojangles']"
                     >
                       {i.name} {i.selectedBranch ? `(${i.selectedBranch})` : ""}
                     </div>

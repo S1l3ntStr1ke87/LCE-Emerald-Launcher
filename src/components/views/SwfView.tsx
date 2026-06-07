@@ -229,9 +229,9 @@ export default function SwfView() {
                 <div
                   key={img.id}
                   onClick={() => { playPressSound(); setSelectedImageId(img.id); }}
-                  className={`flex items-center gap-3 p-3 cursor-pointer transition-all border-l-4 ${selectedImageId === img.id
+                  className={`flex items-center gap-3 p-3 cursor-pointer border-l-4 ${selectedImageId === img.id
                     ? "bg-[#FFFF55]/10 border-[#FFFF55] text-[#FFFF55]"
-                    : "border-transparent hover:bg-white/5 text-white/60 hover:text-white"
+                    : "border-transparent text-white/60"
                     }`}
                 >
                   <img src="/images/tools/arc.png" className={`w-5 h-5 object-contain ${selectedImageId === img.id ? "" : "grayscale"}`} style={{ imageRendering: "pixelated" }} />

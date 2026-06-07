@@ -195,8 +195,8 @@ const ScreenshotsView = memo(function ScreenshotsView() {
                   }}
                   onMouseEnter={() => setGridFocusIndex(index)}
                   className={`
-                    relative aspect-video flex flex-col cursor-pointer transition-all border-2 rounded-sm overflow-hidden bg-black/40
-                    ${gridFocusIndex === index ? "border-[#FFFF55] scale-105 z-10" : "border-[#333] hover:border-[#FFFF55]"}
+                    relative aspect-video flex flex-col cursor-pointer border-2 rounded-sm overflow-hidden bg-black/40
+                    ${gridFocusIndex === index ? "border-[#FFFF55] z-10" : "border-[#333]"}
                   `}
                   style={{
                     backgroundImage: "url('/images/frame_background.png')",
@@ -211,7 +211,7 @@ const ScreenshotsView = memo(function ScreenshotsView() {
                   <div className="w-full h-full relative overflow-hidden bg-black/50">
                     <ScreenshotImage
                       path={ss.path}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover"
                       loading="lazy"
                       alt={ss.name}
                       fallbackSrc="/images/Folder_Icon.png"
@@ -319,8 +319,8 @@ const ScreenshotsView = memo(function ScreenshotsView() {
                   onMouseEnter={() => setModalFocusIndex(0)}
                   onClick={() => handleOpenFolder(selectedScreenshot)}
                   className={`
-                    flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all
-                    ${modalFocusIndex === 0 ? "text-[#FFFF55] scale-105" : "text-white"}
+                    flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer
+                    ${modalFocusIndex === 0 ? "text-[#FFFF55]" : "text-white"}
                   `}
                   style={{
                     backgroundImage:
@@ -341,8 +341,8 @@ const ScreenshotsView = memo(function ScreenshotsView() {
                     setShowDeleteConfirm(true);
                   }}
                   className={`
-                    flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all
-                    ${modalFocusIndex === 1 ? "text-[#FF5555] scale-105" : "text-white"}
+                    flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer
+                    ${modalFocusIndex === 1 ? "text-[#FF5555]" : "text-white"}
                   `}
                   style={{
                     backgroundImage:
@@ -359,8 +359,8 @@ const ScreenshotsView = memo(function ScreenshotsView() {
                   onMouseEnter={() => setModalFocusIndex(2)}
                   onClick={() => setSelectedScreenshot(null)}
                   className={`
-                    w-48 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all
-                    ${modalFocusIndex === 2 ? "text-[#FFFF55] scale-105" : "text-white"}
+                    w-48 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer
+                    ${modalFocusIndex === 2 ? "text-[#FFFF55]" : "text-white"}
                   `}
                   style={{
                     backgroundImage:
@@ -411,8 +411,8 @@ const ScreenshotsView = memo(function ScreenshotsView() {
                     setShowDeleteConfirm(false);
                   }}
                   className={`
-                    flex-1 h-10 flex items-center justify-center text-lg mc-text-shadow border-none outline-none cursor-pointer transition-all
-                    ${deleteConfirmFocusIndex === 0 ? "text-[#FFFF55] scale-105" : "text-white"}
+                    flex-1 h-10 flex items-center justify-center text-lg mc-text-shadow border-none outline-none cursor-pointer
+                    ${deleteConfirmFocusIndex === 0 ? "text-[#FFFF55]" : "text-white"}
                   `}
                   style={{
                     backgroundImage:
@@ -429,8 +429,8 @@ const ScreenshotsView = memo(function ScreenshotsView() {
                   onMouseEnter={() => setDeleteConfirmFocusIndex(1)}
                   onClick={confirmDelete}
                   className={`
-                    flex-1 h-10 flex items-center justify-center text-lg mc-text-shadow border-none outline-none cursor-pointer transition-all
-                    ${deleteConfirmFocusIndex === 1 ? "text-[#FF5555] scale-105" : "text-white"}
+                    flex-1 h-10 flex items-center justify-center text-lg mc-text-shadow border-none outline-none cursor-pointer
+                    ${deleteConfirmFocusIndex === 1 ? "text-[#FF5555]" : "text-white"}
                   `}
                   style={{
                     backgroundImage:

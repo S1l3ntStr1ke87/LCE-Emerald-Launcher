@@ -175,7 +175,7 @@ const HomeView = memo(function HomeView() {
               onClick={() => {
                 if (isFocusedSection) playPressSound();
               }}
-              className={`hover:scale-110 transition-transform ${!isFocusedSection ? "pointer-events-none" : ""}`}
+              className={`${!isFocusedSection ? "pointer-events-none" : ""}`}
             >
               <img
                 src="/images/discord.png"
@@ -192,7 +192,7 @@ const HomeView = memo(function HomeView() {
               onClick={() => {
                 if (isFocusedSection) playPressSound();
               }}
-              className={`hover:scale-110 transition-transform ${!isFocusedSection ? "pointer-events-none" : ""}`}
+              className={`${!isFocusedSection ? "pointer-events-none" : ""}`}
             >
               <img
                 src="/images/github.png"

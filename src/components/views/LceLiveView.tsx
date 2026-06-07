@@ -564,7 +564,7 @@ const LceLiveView = memo(function LceLiveView() {
                   data-index={idx}
                   onMouseEnter={() => setFocusIndex(idx)}
                   onClick={btn.onClick}
-                  className={`flex-1 h-12 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none transition-all ${isFocused ? "text-[#FFFF55] mc-text-shadow scale-[1.02] z-10 relative drop-shadow-md" : "text-white mc-text-shadow hover:text-gray-200"}`}
+                  className={`flex-1 h-12 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none ${isFocused ? "text-[#FFFF55] mc-text-shadow z-10 relative drop-shadow-md" : "text-white mc-text-shadow hover:text-gray-200"}`}
                   style={{
                     backgroundImage: isFocused
                       ? "url('/images/button_highlighted.png')"
@@ -612,7 +612,7 @@ const LceLiveView = memo(function LceLiveView() {
                       key={item.id}
                       data-index={idx}
                       onMouseEnter={() => setFocusIndex(idx)}
-                      className={`w-full flex items-center justify-between px-4 py-3 relative outline-none border-none rounded transition-all ${isFocused ? "bg-black/15 shadow-inner" : "bg-transparent hover:bg-black/5"}`}
+                      className={`w-full flex items-center justify-between px-4 py-3 relative outline-none border-none rounded ${isFocused ? "bg-black/15 shadow-inner" : "bg-transparent"}`}
                       tabIndex={-1}
                     >
                       <div className="flex items-center w-full">
@@ -643,7 +643,7 @@ const LceLiveView = memo(function LceLiveView() {
                       <div className="flex space-x-3 pr-2 shrink-0">
                         {item.type === "friend" && !isHosting && (
                           <button
-                            className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow transition-transform ${isFocused ? "text-white scale-105 shadow-md" : "text-gray-300"}`}
+                            className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow ${isFocused ? "text-white shadow-md" : "text-gray-300"}`}
                             style={{
                               backgroundImage:
                                 "url('/images/Button_Background.png')",
@@ -658,7 +658,7 @@ const LceLiveView = memo(function LceLiveView() {
                         {item.type === "friend" && isHosting && (
                           <>
                             <button
-                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow transition-transform ${isFocused ? "text-white scale-105 shadow-md" : "text-gray-300"}`}
+                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow ${isFocused ? "text-white shadow-md" : "text-gray-300"}`}
                               style={{
                                 backgroundImage:
                                   "url('/images/button_highlighted.png')",
@@ -674,7 +674,7 @@ const LceLiveView = memo(function LceLiveView() {
                                 : "INVITE"}
                             </button>
                             <button
-                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow transition-transform ${isFocused ? "text-white scale-105 shadow-md" : "text-gray-300"}`}
+                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow ${isFocused ? "text-white shadow-md" : "text-gray-300"}`}
                               style={{
                                 backgroundImage:
                                   "url('/images/Button_Background.png')",
@@ -692,7 +692,7 @@ const LceLiveView = memo(function LceLiveView() {
                         )}
                         {item.type === "request_out" && (
                           <button
-                            className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow transition-transform ${isFocused ? "text-white scale-105 shadow-md" : "text-gray-300"}`}
+                            className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow ${isFocused ? "text-white shadow-md" : "text-gray-300"}`}
                             style={{
                               backgroundImage:
                                 "url('/images/Button_Background.png')",
@@ -708,7 +708,7 @@ const LceLiveView = memo(function LceLiveView() {
                           item.type === "invite") && (
                           <>
                             <button
-                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow transition-transform ${isFocused ? "text-white scale-105 shadow-md" : "text-gray-300"}`}
+                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow ${isFocused ? "text-white shadow-md" : "text-gray-300"}`}
                               style={{
                                 backgroundImage:
                                   "url('/images/button_highlighted.png')",
@@ -720,7 +720,7 @@ const LceLiveView = memo(function LceLiveView() {
                               ACCEPT
                             </button>
                             <button
-                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow transition-transform ${isFocused ? "text-white scale-105 shadow-md" : "text-gray-300"}`}
+                              className={`px-6 h-12 flex items-center justify-center font-bold text-base outline-none uppercase tracking-widest mc-text-shadow ${isFocused ? "text-white shadow-md" : "text-gray-300"}`}
                               style={{
                                 backgroundImage:
                                   "url('/images/Button_Background.png')",
@@ -803,7 +803,7 @@ const LceLiveView = memo(function LceLiveView() {
           <img
             src="/images/lcelive.png"
             alt="LCELive"
-            className="h-5 opacity-70 cursor-pointer hover:opacity-100 transition-opacity"
+            className="h-5 opacity-70 cursor-pointer"
             onClick={() => TauriService.openUrl('https://lcelive.co.uk')}
           />
         </div>
@@ -838,7 +838,7 @@ const LceLiveView = memo(function LceLiveView() {
               />
               <div className="flex gap-4 w-full">
                 <button
-                  className="h-12 flex-1 flex items-center justify-center text-white mc-text-shadow text-xl font-bold uppercase tracking-widest transition-transform hover:text-[#FFFF55] hover:scale-105 outline-none border-none"
+                  className="h-12 flex-1 flex items-center justify-center text-white mc-text-shadow text-xl font-bold uppercase tracking-widest hover:text-[#FFFF55] outline-none border-none"
                   style={{
                     backgroundImage: "url('/images/button_highlighted.png')",
                     backgroundSize: "100% 100%",
@@ -859,7 +859,7 @@ const LceLiveView = memo(function LceLiveView() {
                   Send
                 </button>
                 <button
-                  className="h-12 flex-1 flex items-center justify-center text-white mc-text-shadow text-xl font-bold uppercase tracking-widest transition-transform hover:text-[#FFFF55] hover:scale-105 outline-none border-none"
+                  className="h-12 flex-1 flex items-center justify-center text-white mc-text-shadow text-xl font-bold uppercase tracking-widest hover:text-[#FFFF55] outline-none border-none"
                   style={{
                     backgroundImage: "url('/images/Button_Background.png')",
                     backgroundSize: "100% 100%",
@@ -901,7 +901,7 @@ const LceLiveView = memo(function LceLiveView() {
                 data-index={0}
                 onMouseEnter={() => setFocusIndex(0)}
                 onClick={handleHostRelay}
-                className={`w-full h-14 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none transition-all ${focusIndex === 0 ? "text-[#FFFF55] mc-text-shadow scale-[1.02]" : "text-white mc-text-shadow hover:text-[#FFFF55]"}`}
+                className={`w-full h-14 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none ${focusIndex === 0 ? "text-[#FFFF55] mc-text-shadow" : "text-white mc-text-shadow hover:text-[#FFFF55]"}`}
                 style={{
                   backgroundImage:
                     focusIndex === 0
@@ -917,7 +917,7 @@ const LceLiveView = memo(function LceLiveView() {
                 data-index={1}
                 onMouseEnter={() => setFocusIndex(1)}
                 onClick={handleHostDirect}
-                className={`w-full h-14 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none transition-all ${focusIndex === 1 ? "text-[#FFFF55] mc-text-shadow scale-[1.02]" : "text-white mc-text-shadow hover:text-[#FFFF55]"}`}
+                className={`w-full h-14 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none ${focusIndex === 1 ? "text-[#FFFF55] mc-text-shadow" : "text-white mc-text-shadow hover:text-[#FFFF55]"}`}
                 style={{
                   backgroundImage:
                     focusIndex === 1
@@ -937,7 +937,7 @@ const LceLiveView = memo(function LceLiveView() {
                   setFocusIndex(0);
                   playBackSound();
                 }}
-                className={`w-full h-14 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none transition-all ${focusIndex === 2 ? "text-[#FFFF55] mc-text-shadow scale-[1.02]" : "text-white mc-text-shadow hover:text-[#FFFF55]"}`}
+                className={`w-full h-14 flex items-center justify-center text-xl font-bold uppercase tracking-widest outline-none border-none ${focusIndex === 2 ? "text-[#FFFF55] mc-text-shadow" : "text-white mc-text-shadow hover:text-[#FFFF55]"}`}
                 style={{
                   backgroundImage:
                     focusIndex === 2
@@ -977,7 +977,7 @@ const LceLiveView = memo(function LceLiveView() {
                 {errorModal}
               </p>
               <button
-                className="h-12 w-48 flex items-center justify-center text-white mc-text-shadow text-xl font-bold uppercase tracking-widest transition-transform hover:text-[#FFFF55] hover:scale-105 outline-none border-none"
+                className="h-12 w-48 flex items-center justify-center text-white mc-text-shadow text-xl font-bold uppercase tracking-widest hover:text-[#FFFF55] outline-none border-none"
                 style={{
                   backgroundImage: "url('/images/button_highlighted.png')",
                   backgroundSize: "100% 100%",

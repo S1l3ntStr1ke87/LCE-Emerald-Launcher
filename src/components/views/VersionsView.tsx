@@ -514,9 +514,9 @@ const VersionsView = memo(function VersionsView() {
                                 playPressSound();
                                 cycleBranch(edition.id);
                               }}
-                              className="w-full text-left px-3 py-1.5 text-[10px] text-white mc-text-shadow hover:bg-white/10 flex items-center justify-between group transition-colors"
+                              className="w-full text-left px-3 py-1.5 text-[10px] text-white mc-text-shadow flex items-center justify-between group"
                             >
-                              <span className="text-[#AAAAAA] group-hover:text-white font-bold">
+                              <span className="text-[#AAAAAA] font-bold">
                                 Channel
                               </span>
                               <span className="text-[#ffff55] font-bold">
@@ -532,7 +532,7 @@ const VersionsView = memo(function VersionsView() {
                             TauriService.openInstanceFolder(edition.instanceId);
                             setOpenMenuId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] flex items-center gap-2 mc-text-shadow"
                         >
                           <img
                             src="/images/Folder_Icon.png"
@@ -566,7 +566,7 @@ const VersionsView = memo(function VersionsView() {
                             );
                             setOpenMenuId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] flex items-center gap-2 mc-text-shadow"
                         >
                           <img
                             src="/images/steam.png"
@@ -583,7 +583,7 @@ const VersionsView = memo(function VersionsView() {
                             handleImportWorld(edition.instanceId);
                             setOpenMenuId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] flex items-center gap-2 mc-text-shadow"
                         >
                           <svg
                             width="14"
@@ -609,7 +609,7 @@ const VersionsView = memo(function VersionsView() {
                             });
                             setOpenMenuId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] flex items-center gap-2 mc-text-shadow"
                         >
                           <svg
                             width="14"
@@ -637,7 +637,7 @@ const VersionsView = memo(function VersionsView() {
                               if (err !== "CANCELED") console.error(err);
                             }
                           }}
-                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] flex items-center gap-2 mc-text-shadow"
                         >
                           <svg
                             width="14"
@@ -661,7 +661,7 @@ const VersionsView = memo(function VersionsView() {
                             setIsCustomizeModalOpen(true);
                             setOpenMenuId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] flex items-center gap-2 mc-text-shadow"
                         >
                           <svg
                             width="14"
@@ -684,7 +684,7 @@ const VersionsView = memo(function VersionsView() {
                             setIsSetUidModalOpen(true);
                             setOpenMenuId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                          className="w-full text-left px-3 py-2 text-xs text-[#dddddd] flex items-center gap-2 mc-text-shadow"
                         >
                           <svg
                             width="14"
@@ -709,7 +709,7 @@ const VersionsView = memo(function VersionsView() {
                               setIsImportModalOpen(true);
                               setOpenMenuId(null);
                             }}
-                            className="w-full text-left px-3 py-2 text-xs text-[#aaaaaa] hover:text-white hover:bg-white/10 flex items-center gap-2 transition-colors mc-text-shadow"
+                            className="w-full text-left px-3 py-2 text-xs text-[#aaaaaa] flex items-center gap-2 mc-text-shadow"
                           >
                             <svg
                               width="14"

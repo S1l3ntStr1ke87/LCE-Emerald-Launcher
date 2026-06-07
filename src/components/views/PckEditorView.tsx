@@ -149,7 +149,7 @@ export default function PckEditorView() {
             className={`flex items-center gap-2 p-2 cursor-pointer transition-all border-l-2 ${
               isSelected
                 ? "bg-[#FFFF55]/10 border-[#FFFF55] text-[#FFFF55]"
-                : "border-transparent hover:bg-white/5 text-white"
+                : "border-transparent text-white"
             } ${node.isFolder ? "font-bold" : ""}`}
           >
             {node.isFolder ? (
@@ -686,7 +686,7 @@ export default function PckEditorView() {
                       <div className="relative">
                         <button
                           onClick={() => setIsChangingType(!isChangingType)}
-                          className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-all group/type"
+                          className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/10 rounded-sm group/type"
                         >
                           <span
                             className="text-[10px] uppercase tracking-widest mc-text-shadow font-bold"
@@ -699,7 +699,7 @@ export default function PckEditorView() {
                           </span>
                           <img
                             src="/images/Settings_Arrow_Down.png"
-                            className={`w-2 h-2 object-contain opacity-40 group-hover/type:opacity-60 transition-transform ${isChangingType ? "rotate-180" : ""}`}
+                            className="w-2 h-2 object-contain opacity-40"
                             style={{ imageRendering: "pixelated" }}
                           />
                         </button>
@@ -742,10 +742,10 @@ export default function PckEditorView() {
                                           handleTypeChange(typeVal);
                                           setIsChangingType(false);
                                         }}
-                                        className={`w-full text-left px-3 py-2 text-[10px] uppercase tracking-widest transition-all border-l-2 ${
+                                        className={`w-full text-left px-3 py-2 text-[10px] uppercase tracking-widest border-l-2 ${
                                           isActive
                                             ? "bg-white/10 border-[#FFFF55] text-white"
-                                            : "border-transparent text-white/40 hover:text-white/80 hover:bg-white/5"
+                                            : "border-transparent text-white/40"
                                         }`}
                                       >
                                         <div className="flex items-center gap-2">
@@ -770,7 +770,6 @@ export default function PckEditorView() {
                     <div className="flex gap-2 shrink-0">
                       <button
                         onClick={() => handleMoveAsset("up")}
-                        className="hover:scale-110 active:scale-95 transition-transform"
                       >
                         <img
                           src="/images/Settings_Arrow_Up.png"
@@ -780,7 +779,6 @@ export default function PckEditorView() {
                       </button>
                       <button
                         onClick={() => handleMoveAsset("down")}
-                        className="hover:scale-110 active:scale-95 transition-transform"
                       >
                         <img
                           src="/images/Settings_Arrow_Down.png"
@@ -809,7 +807,7 @@ export default function PckEditorView() {
                           style={{ imageRendering: "pixelated" }}
                         />
                       )}
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 px-2 py-1 rounded text-[10px] text-white/60 pointer-events-none uppercase tracking-widest">
+                      <div className="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white/60 pointer-events-none uppercase tracking-widest">
                         {selectedAsset.type === PCKAssetType.SKIN
                           ? "3D Skin View"
                           : selectedAsset.type === PCKAssetType.CAPE
@@ -1005,7 +1003,7 @@ export default function PckEditorView() {
                       </button>
                       <button
                         onClick={() => handleDeleteAsset(selectedAsset.id)}
-                        className="w-full py-2 text-red-500/80 mc-text-shadow text-sm transition-all hover:text-red-500 hover:scale-[1.02]"
+                        className="w-full py-2 text-red-500/80 mc-text-shadow text-sm hover:text-red-500"
                         style={{
                           backgroundImage:
                             "url('/images/Button_Background.png')",

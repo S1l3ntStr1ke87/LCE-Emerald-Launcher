@@ -289,7 +289,7 @@ const SkinViewer = memo(function SkinViewer({ username, setUsername, playPressSo
           data-focus="1" tabIndex={0}
           onMouseEnter={() => isFocusedSection && setFocusIndex(1)}
           onClick={() => { playPressSound(); setActiveView('skins'); }}
-          className={`mc-sq-btn w-12 h-12 flex items-center justify-center outline-none border-none transition-all ${isFocusedSection && focusIndex === 1 ? 'scale-110' : ''}`}
+          className={`mc-sq-btn w-12 h-12 flex items-center justify-center outline-none border-none ${isFocusedSection && focusIndex === 1 ? '' : ''}`}
           style={isFocusedSection && focusIndex === 1 ? { backgroundImage: "url('/images/Button_Square_Highlighted.png')" } : {}}
           title="Change Skin"
         >
@@ -299,7 +299,7 @@ const SkinViewer = memo(function SkinViewer({ username, setUsername, playPressSo
           data-focus="2" tabIndex={0}
           onMouseEnter={() => isFocusedSection && setFocusIndex(2)}
           onClick={() => { playPressSound(); setActiveView('screenshots'); }}
-          className={`mc-sq-btn w-12 h-12 flex items-center justify-center outline-none border-none transition-all ${isFocusedSection && focusIndex === 2 ? 'scale-110' : ''}`}
+          className={`mc-sq-btn w-12 h-12 flex items-center justify-center outline-none border-none ${isFocusedSection && focusIndex === 2 ? '' : ''}`}
           style={isFocusedSection && focusIndex === 2 ? { backgroundImage: "url('/images/Button_Square_Highlighted.png')" } : {}}
           title="Screenshots"
         >
@@ -309,7 +309,7 @@ const SkinViewer = memo(function SkinViewer({ username, setUsername, playPressSo
           data-focus="3" tabIndex={0}
           onMouseEnter={() => isFocusedSection && setFocusIndex(3)}
           onClick={() => { playPressSound(); setActiveView('lcelive'); }}
-          className={`mc-sq-btn w-12 h-12 flex items-center justify-center outline-none border-none transition-all ${isFocusedSection && focusIndex === 3 ? 'scale-110' : ''}`}
+          className={`mc-sq-btn w-12 h-12 flex items-center justify-center outline-none border-none ${isFocusedSection && focusIndex === 3 ? '' : ''}`}
           style={isFocusedSection && focusIndex === 3 ? { backgroundImage: "url('/images/Button_Square_Highlighted.png')" } : {}}
           title="LCELive"
         >

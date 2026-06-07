@@ -219,7 +219,7 @@ export default function App() {
                   audio.playPressSound();
                   setIsUiHidden(!isUiHidden);
                 }}
-                className="hover:scale-110 active:scale-95 transition-transform outline-none bg-transparent border-none"
+                className="outline-none bg-transparent border-none"
               >
                 <img
                   src={
@@ -247,7 +247,7 @@ export default function App() {
                   audio.playPressSound();
                   config.setIsDayTime(!config.isDayTime);
                 }}
-                className="hover:scale-110 active:scale-95 transition-transform outline-none bg-transparent border-none"
+                className="outline-none bg-transparent border-none"
               >
                 <img
                   src={
@@ -276,18 +276,18 @@ export default function App() {
                   setIsUiHidden(false);
                   setActiveView("swf-editor");
                 }}
-                className="pointer-events-auto hover:scale-110 active:scale-95 transition-transform outline-none bg-transparent border-none flex flex-col items-center gap-2 group"
+                className="pointer-events-auto outline-none bg-transparent border-none flex flex-col items-center gap-2 group"
               >
                 <img
                   src="/images/tools/pck.png"
-                  className="w-16 h-16 cursor-pointer object-contain opacity-50 group-hover:opacity-100 drop-shadow-[0_4px_4px_rgba(0,0,0,1)] grayscale group-hover:grayscale-0"
+                  className="w-16 h-16 cursor-pointer object-contain opacity-50 drop-shadow-[0_4px_4px_rgba(0,0,0,1)] grayscale"
                   style={{ imageRendering: "pixelated" }}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
                       "/images/Button_Background.png";
                   }}
                 />
-                <span className="text-[#FFFF55] text-sm mc-text-shadow opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[#FFFF55] text-sm mc-text-shadow">
                   SWF Editor
                 </span>
               </button>

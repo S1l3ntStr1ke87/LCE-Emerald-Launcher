@@ -166,14 +166,14 @@ export default function ColEditorView() {
           <div className="flex gap-1 p-2 pt-4 border-b-2 border-[#373737]">
             <button
               onClick={() => { playPressSound(); setActiveTab("colors"); }}
-              className={`flex items-center gap-3 px-6 py-2 transition-all mc-text-shadow ${activeTab === "colors" ? "text-[#FFFF55] opacity-100 scale-105" : "text-white opacity-40 hover:opacity-100"}`}
+              className={`flex items-center gap-3 px-6 py-2 mc-text-shadow ${activeTab === "colors" ? "text-[#FFFF55] opacity-100" : "text-white opacity-40"}`}
             >
               <span className="text-lg">Colors ({col.colors.length})</span>
             </button>
             <button
               onClick={() => { playPressSound(); setActiveTab("worldColors"); }}
               disabled={col.version === 0}
-              className={`flex items-center gap-3 px-6 py-2 transition-all mc-text-shadow ${activeTab === "worldColors" ? "text-[#FFFF55] opacity-100 scale-105" : "text-white opacity-40 hover:opacity-100"} ${col.version === 0 ? "opacity-20 cursor-not-allowed" : ""}`}
+              className={`flex items-center gap-3 px-6 py-2 mc-text-shadow ${activeTab === "worldColors" ? "text-[#FFFF55] opacity-100" : "text-white opacity-40"} ${col.version === 0 ? "opacity-20 cursor-not-allowed" : ""}`}
             >
               <span className="text-lg">World Colors ({col.worldColors.length})</span>
             </button>
@@ -215,7 +215,7 @@ export default function ColEditorView() {
                 </thead>
                 <tbody>
                   {activeTab === "colors" && currentColors.map((c) => (
-                    <tr key={c.originalIdx} className="border-b border-[#373737]/30 hover:bg-white/5 transition-colors group">
+                    <tr key={c.originalIdx} className="border-b border-[#373737]/30 group">
                       <td className="p-2">
                         <input
                           type="text"
@@ -253,7 +253,7 @@ export default function ColEditorView() {
                         </div>
                       </td>
                       <td className="p-2 text-right">
-                        <button onClick={() => handleDeleteColor(c.originalIdx)} className="p-1 hover:text-red-500 opacity-60 hover:opacity-100 transition-colors">
+                        <button onClick={() => handleDeleteColor(c.originalIdx)} className="p-1 hover:text-red-500 opacity-60">
                           <img src="/images/Trash_Bin_Icon.png" className="w-5 h-5 object-contain" style={{ imageRendering: "pixelated" }} />
                         </button>
                       </td>
@@ -261,7 +261,7 @@ export default function ColEditorView() {
                   ))}
 
                   {activeTab === "worldColors" && currentWorldColors.map((w) => (
-                    <tr key={w.originalIdx} className="border-b border-[#373737]/30 hover:bg-white/5 transition-colors group">
+                    <tr key={w.originalIdx} className="border-b border-[#373737]/30 group">
                       <td className="p-2">
                         <input
                           type="text"
@@ -352,7 +352,7 @@ export default function ColEditorView() {
                         </div>
                       </td>
                       <td className="p-2 text-right">
-                        <button onClick={() => handleDeleteWorldColor(w.originalIdx)} className="p-1 hover:text-red-500 opacity-60 hover:opacity-100 transition-colors">
+                        <button onClick={() => handleDeleteWorldColor(w.originalIdx)} className="p-1 hover:text-red-500 opacity-60">
                           <img src="/images/Trash_Bin_Icon.png" className="w-5 h-5 object-contain" style={{ imageRendering: "pixelated" }} />
                         </button>
                       </td>

@@ -247,7 +247,7 @@ export const ArcEditorView: React.FC = () => {
         <div
           key={node.originalIdx}
           onClick={() => { playPressSound(); setSelectedEntryIdx(node.originalIdx); }}
-          className={`group flex items-center gap-2 px-2 py-1 cursor-pointer transition-colors ${isSelected ? "bg-[#FFFF55]/20 text-[#FFFF55]" : "hover:bg-white/5 text-white/80"}`}
+          className={`group flex items-center gap-2 px-2 py-1 cursor-pointer ${isSelected ? "bg-[#FFFF55]/20 text-[#FFFF55]" : "text-white/80"}`}
         >
           <img src="/images/Download_Icon.png" className="w-3 h-3 opacity-40" style={{ imageRendering: "pixelated" }} />
           <span className="truncate text-sm font-medium tracking-tight">
@@ -264,7 +264,7 @@ export const ArcEditorView: React.FC = () => {
       <div key={nodePath} className="flex flex-col">
         <div
           onClick={() => { playPressSound(); toggleNode(nodePath); }}
-          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-white/5 text-white/50 transition-colors group"
+          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-white/50 group"
         >
           <motion.span
             animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -366,14 +366,14 @@ export const ArcEditorView: React.FC = () => {
           <div className="flex gap-1 p-2 pt-4 border-b-2 border-[#373737]">
             <button
               onClick={() => { playPressSound(); setActiveTab("arc"); }}
-              className={`flex items-center gap-3 px-6 py-2 transition-all mc-text-shadow ${activeTab === "arc" ? "text-[#FFFF55] opacity-100 scale-105" : "text-white opacity-40 hover:opacity-100"}`}
+              className={`flex items-center gap-3 px-6 py-2 mc-text-shadow ${activeTab === "arc" ? "text-[#FFFF55] opacity-100" : "text-white opacity-40"}`}
             >
               <img src="/images/tools/arc.png" className={`w-5 h-5 object-contain ${activeTab === "arc" ? "" : "grayscale opacity-50"}`} style={{ imageRendering: "pixelated" }} />
               <span className="text-lg uppercase tracking-wider font-bold">Archive</span>
             </button>
             <button
               onClick={() => { playPressSound(); setActiveTab("loc"); }}
-              className={`flex items-center gap-3 px-6 py-2 transition-all mc-text-shadow ${activeTab === "loc" ? "text-[#FFFF55] opacity-100 scale-105" : "text-white opacity-40 hover:opacity-100"}`}
+              className={`flex items-center gap-3 px-6 py-2 mc-text-shadow ${activeTab === "loc" ? "text-[#FFFF55] opacity-100" : "text-white opacity-40"}`}
             >
               <img src="/images/tools/loc.png" className={`w-5 h-5 object-contain ${activeTab === "loc" ? "" : "grayscale opacity-50"}`} style={{ imageRendering: "pixelated" }} />
               <span className="text-lg uppercase tracking-wider font-bold">Languages (LOC)</span>
@@ -460,7 +460,7 @@ export const ArcEditorView: React.FC = () => {
                         <div className="mt-4 pt-4 border-t border-white/10">
                           <button
                             onClick={() => handleDeleteEntry(selectedEntryIdx!)}
-                            className="w-full py-2 text-red-500/80 mc-text-shadow text-sm transition-all hover:text-red-500 hover:scale-[1.02]"
+                            className="w-full py-2 text-red-500/80 mc-text-shadow text-sm hover:text-red-500"
                             style={{ backgroundImage: "url('/images/Button_Background.png')", backgroundSize: "100% 100%" }}
                           >
                             Delete Entry
@@ -537,20 +537,20 @@ export const ArcEditorView: React.FC = () => {
                         </thead>
                         <tbody>
                           {filteredLocStrings.map((str) => (
-                            <tr key={str.originalIdx} className="border-b border-[#373737]/30 hover:bg-white/5 transition-colors group">
+                            <tr key={str.originalIdx} className="border-b border-[#373737]/30 group">
                               <td className="p-3 text-[#FFFF55] font-mono text-sm max-w-[200px] truncate">
                                 {currentLocLang?.isStatic ? str.originalIdx : str.key}
                               </td>
                               <td className="p-3 text-white text-sm whitespace-pre-wrap">{str.value}</td>
-                              <td className="p-3 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                              <td className="p-3 text-right">
                                 <div className="flex justify-end gap-2">
                                   <button
                                     onClick={() => setIsLocEditModalOpen({ langIdx: selectedLocLangIdx, strIdx: str.originalIdx, isNew: false })}
-                                    className="px-2 py-1 text-[10px] bg-white/10 hover:bg-[#FFFF55]/20 hover:text-[#FFFF55] border border-white/20 transition-all uppercase"
+                                    className="px-2 py-1 text-[10px] bg-white/10 hover:bg-[#FFFF55]/20 hover:text-[#FFFF55] border border-white/20 uppercase"
                                   >
                                     Edit
                                   </button>
-                                  <button onClick={() => handleLocStringDelete(selectedLocLangIdx, str.originalIdx)} className="p-1 hover:text-red-500 transition-colors opacity-60 hover:opacity-100">
+                                  <button onClick={() => handleLocStringDelete(selectedLocLangIdx, str.originalIdx)} className="p-1 hover:text-red-500 opacity-60">
                                     <img src="/images/Trash_Bin_Icon.png" className="w-4 h-4 object-contain" style={{ imageRendering: "pixelated" }} />
                                   </button>
                                 </div>

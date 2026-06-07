@@ -175,20 +175,20 @@ export default function LocEditorView() {
                 </thead>
                 <tbody>
                   {filteredLocStrings.map((str) => (
-                    <tr key={str.originalIdx} className="border-b border-[#373737]/30 hover:bg-white/5 transition-colors group">
+                    <tr key={str.originalIdx} className="border-b border-[#373737]/30 group">
                       <td className="p-3 text-[#FFFF55] font-mono text-sm max-w-[200px] truncate">
                         {currentLocLang?.isStatic ? str.originalIdx : str.key}
                       </td>
                       <td className="p-3 text-white text-sm whitespace-pre-wrap">{str.value}</td>
-                      <td className="p-3 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className="p-3 text-right">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => setIsLocEditModalOpen({ langIdx: selectedLocLangIdx, strIdx: str.originalIdx, isNew: false })}
-                            className="px-2 py-1 text-[10px] bg-white/10 hover:bg-[#FFFF55]/20 hover:text-[#FFFF55] border border-white/20 transition-all uppercase"
+                            className="px-2 py-1 text-[10px] bg-white/10 hover:bg-[#FFFF55]/20 hover:text-[#FFFF55] border border-white/20 uppercase"
                           >
                             Edit
                           </button>
-                          <button onClick={() => handleLocStringDelete(selectedLocLangIdx, str.originalIdx)} className="p-1 hover:text-red-500 transition-colors opacity-60 hover:opacity-100">
+                          <button onClick={() => handleLocStringDelete(selectedLocLangIdx, str.originalIdx)} className="p-1 hover:text-red-500 opacity-60">
                             <img src="/images/Trash_Bin_Icon.png" className="w-4 h-4 object-contain" style={{ imageRendering: "pixelated" }} />
                           </button>
                         </div>

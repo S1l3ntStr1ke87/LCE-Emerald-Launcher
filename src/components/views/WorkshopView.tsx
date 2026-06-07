@@ -509,8 +509,8 @@ const WorkshopView = memo(function WorkshopView() {
               key={tab}
               onClick={() => selectTab(tab)}
               className={`
-                relative h-10 px-5 text-sm mc-text-shadow tracking-widest border-none outline-none cursor-pointer transition-all
-                ${isActive ? "text-[#FFFF55] scale-105" : "text-white hover:text-[#FFFF55] hover:scale-105"}
+                relative h-10 px-5 text-sm mc-text-shadow tracking-widest border-none outline-none cursor-pointer
+                ${isActive ? "text-[#FFFF55]" : "text-white hover:text-[#FFFF55]"}
               `}
               style={{
                 backgroundImage: isActive
@@ -674,7 +674,7 @@ const WorkshopView = memo(function WorkshopView() {
                         }
                         refreshInstalled();
                       }}
-                      className="h-8 px-4 flex items-center justify-center text-sm mc-text-shadow border border-[#555] text-[#FFFF55] hover:bg-white/10 transition-colors"
+                      className="h-8 px-4 flex items-center justify-center text-sm mc-text-shadow border border-[#555] text-[#FFFF55]"
                       style={{
                         backgroundImage: "url('/images/Button_Background.png')",
                         backgroundSize: "100% 100%",
@@ -699,7 +699,7 @@ const WorkshopView = memo(function WorkshopView() {
                         }
                         refreshInstalled();
                       }}
-                      className="h-8 px-4 flex items-center justify-center text-sm mc-text-shadow border border-[#555] text-white hover:bg-white/10 transition-colors"
+                      className="h-8 px-4 flex items-center justify-center text-sm mc-text-shadow border border-[#555] text-white"
                       style={{
                         backgroundImage: "url('/images/Button_Background.png')",
                         backgroundSize: "100% 100%",
@@ -759,7 +759,7 @@ const WorkshopView = memo(function WorkshopView() {
                     <img
                       src="/images/bytebukkit.png"
                       alt="ByteBukkit"
-                      className="h-5 opacity-70 cursor-pointer hover:opacity-100 transition-opacity"
+                      className="h-5 opacity-70 cursor-pointer"
                       onClick={() =>
                         TauriService.openUrl("https://bytebukkit.github.io")
                       }
@@ -892,7 +892,7 @@ function PackageCard({
       data-card={index}
       onMouseEnter={onHover}
       onClick={onClick}
-      className={`flex flex-col cursor-pointer transition-all border-2 ${focused ? "border-[#FFFF55] scale-105 z-10" : "border-[#333] hover:border-[#FFFF55]"} rounded-sm overflow-hidden bg-black/40`}
+      className={`flex flex-col cursor-pointer border-2 ${focused ? "border-[#FFFF55] z-10" : "border-[#333]"} rounded-sm overflow-hidden bg-black/40`}
       style={{
         backgroundImage: "url('/images/frame_background.png')",
         backgroundSize: "100% 100%",
@@ -911,7 +911,7 @@ function PackageCard({
           <img
             src={thumbnailUrl}
             alt={pkg.name}
-            className={`w-full h-full transition-transform ${pkg.thumbnail.startsWith("http") ? "object-contain p-2" : "object-cover group-hover:scale-110"}`}
+            className={`w-full h-full ${pkg.thumbnail.startsWith("http") ? "object-contain p-2" : "object-cover"}`}
             style={{ imageRendering: "pixelated" }}
             onError={() => setImgError(true)}
           />
@@ -1373,7 +1373,7 @@ function PackageModal({
               <button
                 onMouseEnter={() => setModalFocus("install")}
                 onClick={handleAction}
-                className={`flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === "install" ? "text-[#FFFF55] scale-105" : "text-white"}`}
+                className={`flex-1 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer ${modalFocus === "install" ? "text-[#FFFF55]" : "text-white"}`}
                 style={{
                   backgroundImage:
                     modalFocus === "install"
@@ -1389,7 +1389,7 @@ function PackageModal({
                 <button
                   onMouseEnter={() => setModalFocus("uninstall")}
                   onClick={() => setShowUninstall(true)}
-                  className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === "uninstall" ? "text-[#FF5555] scale-105" : "text-white"}`}
+                  className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer ${modalFocus === "uninstall" ? "text-[#FF5555]" : "text-white"}`}
                   style={{
                     backgroundImage:
                       modalFocus === "uninstall"
@@ -1405,7 +1405,7 @@ function PackageModal({
               <button
                 onMouseEnter={() => setModalFocus("close")}
                 onClick={onClose}
-                className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === "close" ? "text-[#FFFF55] scale-105" : "text-white"}`}
+                className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer ${modalFocus === "close" ? "text-[#FFFF55]" : "text-white"}`}
                 style={{
                   backgroundImage:
                     modalFocus === "close"

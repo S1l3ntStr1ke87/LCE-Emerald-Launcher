@@ -22,15 +22,6 @@
     border-image: url("/images/Button_Background.png") 4 stretch;
     image-rendering: pixelated;
     background: rgba(0, 0, 0, 0.6);
-    transition: all 0.2s ease;
-}
-
-.mc-setup-nav-btn:hover:not(:disabled) {
-    transform: scale(1.05);
-}
-
-.mc-setup-nav-btn:active:not(:disabled) {
-    transform: scale(0.95);
 }
 
 .mc-setup-nav-btn:disabled {
@@ -58,7 +49,6 @@
     image-rendering: pixelated;
     position: relative;
     transform: translateY(2px);
-    transition: all 0.1s ease;
 }
 
 .mc-lce-tab.active {
@@ -100,7 +90,6 @@
     position: relative;
     transform: translateY(4px);
     z-index: 1;
-    transition: all 0.15s ease;
     min-height: 40px;
     background-color: rgba(0, 0, 0, 0.3);
 }
@@ -188,10 +177,6 @@ body {
     min-height: 44px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    filter: brightness(1.2);
-}
-
 .custom-scrollbar::-webkit-scrollbar {
     width: 14px;
 }
@@ -207,10 +192,6 @@ body {
     background-size: 100% 100%;
     image-rendering: pixelated;
     min-height: 44px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    filter: brightness(1.2);
 }
 
 .no-animations * {

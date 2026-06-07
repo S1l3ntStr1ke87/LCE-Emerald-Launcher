@@ -118,7 +118,7 @@ export default function OptionsEditorView() {
               <button
                 key={tab}
                 onClick={() => { playPressSound(); setActiveTab(tab); }}
-                className={`flex items-center gap-3 px-6 py-2 transition-all mc-text-shadow ${activeTab === tab ? "text-[#FFFF55] opacity-100 scale-105" : "text-white opacity-40 hover:opacity-100"}`}
+                className={`flex items-center gap-3 px-6 py-2 mc-text-shadow ${activeTab === tab ? "text-[#FFFF55] opacity-100" : "text-white opacity-40"}`}
               >
                 <span className="text-lg capitalize">{tab}</span>
               </button>

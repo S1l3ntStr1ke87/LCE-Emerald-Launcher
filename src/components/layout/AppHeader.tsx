@@ -37,7 +37,7 @@ export const AppHeader = memo(function AppHeader({ playPressSound, uiFade }: App
             playPressSound();
             appWindow.minimize();
           }}
-          className="w-10 h-8 flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/20 transition-all bg-transparent"
+          className="w-10 h-8 flex items-center justify-center text-gray-300 bg-transparent"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +57,7 @@ export const AppHeader = memo(function AppHeader({ playPressSound, uiFade }: App
             playPressSound();
             appWindow.toggleMaximize();
           }}
-          className="w-10 h-8 flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/20 transition-all bg-transparent"
+          className="w-10 h-8 flex items-center justify-center text-gray-300 bg-transparent"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
