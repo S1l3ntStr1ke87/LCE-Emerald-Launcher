@@ -56,7 +56,15 @@ export function AchievementToast({
     }
     if (variant === "steam") {
       return (
-        <img src="/images/steam.png" alt="Steam" className="w-8 h-8 object-contain" style={{ imageRendering: "pixelated", filter: "brightness(0) invert(1)" }} />
+        <img
+          src="/images/steam.png"
+          alt="Steam"
+          className="w-8 h-8 object-contain"
+          style={{
+            imageRendering: "pixelated",
+            filter: "brightness(0) invert(1)",
+          }}
+        />
       );
     }
     return (
@@ -88,9 +96,9 @@ export function AchievementToast({
           onClick={
             onClick
               ? () => {
-                onClick();
-                onClose();
-              }
+                  onClick();
+                  onClose();
+                }
               : undefined
           }
           className={`fixed top-6 right-6 z-[9999] ${onClick ? "cursor-pointer" : ""}`}
@@ -99,7 +107,7 @@ export function AchievementToast({
             className="flex items-center gap-4 p-4 min-w-[300px] max-w-[450px]"
             style={{
               backgroundImage: "url('/images/notification.png')",
-              backgroundSize: "cover",
+              backgroundSize: "100% 100%",
               backgroundRepeat: "no-repeat",
               imageRendering: "pixelated",
             }}
