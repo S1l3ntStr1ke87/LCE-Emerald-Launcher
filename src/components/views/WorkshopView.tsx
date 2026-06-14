@@ -564,7 +564,7 @@ const WorkshopView = memo(function WorkshopView() {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: config.animationsEnabled ? 0.3 : 0 }}
-      className="flex flex-col items-center w-full max-w-6xl h-full max-h-full relative font-['Mojangles'] text-white select-none outline-none focus:outline-none"
+      className="flex flex-col items-center w-full h-full max-h-full relative font-['Mojangles'] text-white select-none outline-none focus:outline-none"
     >
       <h2 className="text-2xl text-white mc-text-shadow mt-4 mb-6 border-b-2 border-[#373737] pb-2 w-[30%] max-w-[250px] text-center tracking-widest uppercase opacity-80 font-bold whitespace-nowrap px-4">
         Workshop
@@ -644,7 +644,7 @@ const WorkshopView = memo(function WorkshopView() {
         </div>
       </div>
 
-      <div className="w-[98%] flex-1 relative overflow-hidden mc-options-bg">
+      <div className="w-[98%] max-w-6xl flex-1 relative overflow-hidden mc-options-bg">
         {showSearch ? (
           <div className="absolute inset-0 flex flex-col pt-2">
               <div className="flex items-center gap-3 px-6 pb-4">
