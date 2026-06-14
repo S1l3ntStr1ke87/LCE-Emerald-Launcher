@@ -55,6 +55,7 @@ const DEFAULT_SKINS: SavedSkin[] = [
     isSlim: false,
   },
   { id: "amy", name: "Amy", url: "/Skins/amy.png", isSlim: true },
+  { id: "huckle", name: "Huckle", url: "/Skins/huckle.png", isSlim: true },
 ];
 
 const SkinsView = memo(function SkinsView() {
