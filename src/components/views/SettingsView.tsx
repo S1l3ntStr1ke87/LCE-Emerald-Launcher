@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, memo } from "react";
+import { useState, useEffect, useRef, useMemo, memo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { TauriService, Runner } from "../../services/TauriService";
 import { usePlatform } from "../../hooks/usePlatform";
@@ -8,6 +8,7 @@ import {
   useAudio,
   useGame,
 } from "../../context/LauncherContext";
+import { PluginManager, type PluginInfo } from "../../plugins/PluginManager";
 
 const SettingsView = memo(function SettingsView() {
   const { setActiveView } = useUI();
@@ -60,9 +61,10 @@ const SettingsView = memo(function SettingsView() {
   const { isLinux, isMac } = usePlatform();
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [currentSubMenu, setCurrentSubMenu] = useState<
-    "main" | "audio" | "video" | "controls" | "launcher" | "game"
+    "main" | "audio" | "video" | "controls" | "launcher" | "game" | "plugins"
   >("main");
   const [runners, setRunners] = useState<Runner[]>([]);
+  const [pluginsInfo, setPluginsInfo] = useState<PluginInfo[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [argsInput, setArgsInput] = useState("");
   const [prefixInput, setPrefixInput] = useState("");
@@ -76,6 +78,16 @@ const SettingsView = memo(function SettingsView() {
   useEffect(() => {
     TauriService.getAvailableRunners().then(setRunners);
   }, [isRunnerDownloading]);
+
+  const refreshPlugins = useCallback(() => {
+    setPluginsInfo(PluginManager.instance.getPluginInfoList());
+  }, []);
+
+  useEffect(() => {
+    refreshPlugins();
+    PluginManager.instance.setEnabledChangedCallback(refreshPlugins);
+    return () => PluginManager.instance.setEnabledChangedCallback(null!);
+  }, [refreshPlugins]);
 
   const handleLayoutToggle = () => {
     playPressSound();
@@ -315,6 +327,16 @@ const SettingsView = memo(function SettingsView() {
         onClick: () => {
           playPressSound();
           setCurrentSubMenu("game");
+          setFocusIndex(0);
+        },
+      });
+      items.push({
+        id: "plugins_menu",
+        label: "Plugins",
+        type: "button",
+        onClick: () => {
+          playPressSound();
+          setCurrentSubMenu("plugins");
           setFocusIndex(0);
         },
       });
@@ -680,7 +702,9 @@ const SettingsView = memo(function SettingsView() {
                 ? "Controls"
                 : currentSubMenu === "game"
                   ? "Game"
-                  : "Launcher"}
+                  : currentSubMenu === "plugins"
+                    ? "Plugins"
+                    : "Launcher"}
       </h2>
 
       {currentSubMenu === "main" ? (
@@ -750,6 +774,74 @@ const SettingsView = memo(function SettingsView() {
             );
           })}
         </div>
+      ) : currentSubMenu === "plugins" ? (
+        <div className="min-w-[640px] w-fit p-4 flex flex-col items-center mc-options-bg">
+          <div className="w-full space-y-3 flex flex-col items-center overflow-y-auto max-h-[50vh] py-2 settings-scrollbar">
+            {pluginsInfo.length === 0 ? (
+              <div className="text-[#888888] text-lg mc-text-shadow py-8">
+                No plugins installed
+              </div>
+            ) : (
+              pluginsInfo.map((p, index) => {
+                const isFocused = focusIndex === index;
+                return (
+                  <div
+                    key={p.manifest.id}
+                    data-index={index}
+                    onMouseEnter={() => setFocusIndex(index)}
+                    className={`w-[600px] flex items-center gap-3 px-4 py-3 cursor-pointer outline-none border-none ${
+                      isFocused ? "text-[#ffff00]" : "text-[#333333]"
+                    }`}
+                    style={{
+                      backgroundImage: "url('/images/Button_Background2.png')",
+                      backgroundSize: "100% 100%",
+                      imageRendering: "pixelated",
+                    }}
+                    onClick={() => {
+                      playPressSound();
+                      PluginManager.instance.setPluginEnabled(
+                        p.manifest.id,
+                        !p.enabled,
+                      );
+                    }}
+                  >
+                    <div className="relative w-6 h-6 shrink-0 flex items-center justify-center">
+                      <img
+                        src={
+                          isFocused
+                            ? "/images/checkbox_highlighted.png"
+                            : "/images/checkbox.png"
+                        }
+                        alt="checkbox"
+                        className="absolute inset-0 w-full h-full object-contain"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                      {p.enabled && (
+                        <img
+                          src="/images/check.png"
+                          alt="checked"
+                          className="relative z-10 w-6 h-6 object-contain"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <span className="text-lg mc-text-shadow truncate">
+                        {p.manifest.name}
+                      </span>
+                      <span className="text-xs mc-text-shadow opacity-70 truncate">
+                        {p.manifest.description}
+                      </span>
+                      <span className="text-xs mc-text-shadow opacity-50">
+                        by {p.manifest.author} &middot; v{p.manifest.version}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
       ) : (
         <div className="min-w-[640px] w-fit p-4 flex flex-col items-center mc-options-bg">
           <div className="w-full space-y-3 flex flex-col items-center overflow-y-auto max-h-[50vh] py-2 settings-scrollbar">
@@ -803,7 +895,7 @@ const SettingsView = memo(function SettingsView() {
                   className={`w-[600px] h-10 flex items-center pl-1.5 pr-4 relative z-30 outline-none border-none shrink-0 rounded ${focusIndex === index ? "text-[#ffff00]" : isRed ? "text-red-600" : "text-[#333333]"}`}
                 >
                   {isToggle && (
-                    <div className="relative w-6 h-6 mr-3 shrink-0">
+                    <div className="relative w-6 h-6 mr-3 shrink-0 flex items-center justify-center">
                       <img
                         src={
                           focusIndex === index
@@ -811,14 +903,14 @@ const SettingsView = memo(function SettingsView() {
                             : "/images/checkbox.png"
                         }
                         alt="checkbox"
-                        className="w-full h-full object-contain"
+                        className="absolute inset-0 w-full h-full object-contain"
                         style={{ imageRendering: "pixelated" }}
                       />
                       {toggleState && (
                         <img
                           src="/images/check.png"
                           alt="checked"
-                          className="absolute inset-0 w-full h-full object-contain"
+                          className="relative z-10 w-6 h-6 object-contain"
                           style={{ imageRendering: "pixelated" }}
                         />
                       )}

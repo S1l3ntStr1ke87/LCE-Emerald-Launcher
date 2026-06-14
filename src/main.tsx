@@ -5,11 +5,13 @@ import App from "./pages/App";
 import "./css/index.css";
 import "./css/App.css";
 import { LauncherProvider } from "./context/LauncherContext";
-// RpcService is now managed by LauncherProvider context
+import { PluginProvider } from "./plugins/PluginContext";
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <LauncherProvider>
-      <App />
-    </LauncherProvider>
+    <PluginProvider>
+      <LauncherProvider>
+        <App />
+      </LauncherProvider>
+    </PluginProvider>
   </React.StrictMode>
 );

@@ -6,6 +6,7 @@ import {
   useAudio,
   useGame,
 } from "../../context/LauncherContext";
+import { usePluginActions } from "../../plugins/PluginContext";
 import type { Edition } from "../../types/edition";
 
 const HomeView = memo(function HomeView() {
@@ -23,6 +24,7 @@ const HomeView = memo(function HomeView() {
     stopGame,
     updatesAvailable,
   } = useGame();
+  const pluginActions = usePluginActions("home-menu");
 
   const isFocusedSection = focusSection === "menu";
   const selectedEdition = editions.find((e: Edition) => e.id === profile);
@@ -34,8 +36,8 @@ const HomeView = memo(function HomeView() {
   const hasAnyInstall = installs.length > 0;
 
   const buttonsVal = useMemo(
-    () => [
-      {
+    () => {
+      const mainBtn = {
         label: !hasAnyInstall
           ? "Install a version"
           : isGameRunning
@@ -56,36 +58,54 @@ const HomeView = memo(function HomeView() {
                 : () => toggleInstall(profile),
         isDanger: isGameRunning,
         disabled: isDownloading,
-      },
-      {
-        label: "Help & Options",
-        action: () => setActiveView("settings"),
+        id: "main-action",
+      };
+
+      const pluginBtns = pluginActions.map((a) => ({
+        label: a.label,
+        action: () => a.onClick(),
+        isDanger: false,
         disabled: false,
-        id: "settings",
-      },
-      {
-        label: "Versions",
-        action: () => setActiveView("versions"),
-        disabled: false,
-        id: "versions",
-      },
-      {
-        label: "Workshop",
-        action: () => setActiveView("workshop"),
-        disabled: false,
-        id: "workshop",
-      },
-      {
-        label: "Developer Tools",
-        action: () => setActiveView("devtools"),
-        disabled: false,
-        id: "devtools",
-      },
-    ],
+        id: a.id,
+      }));
+
+      const menuBtns = [
+        {
+          label: "Help & Options",
+          action: () => setActiveView("settings"),
+          isDanger: false,
+          disabled: false,
+          id: "settings",
+        },
+        {
+          label: "Versions",
+          action: () => setActiveView("versions"),
+          isDanger: false,
+          disabled: false,
+          id: "versions",
+        },
+        {
+          label: "Workshop",
+          action: () => setActiveView("workshop"),
+          isDanger: false,
+          disabled: false,
+          id: "workshop",
+        },
+        {
+          label: "Developer Tools",
+          action: () => setActiveView("devtools"),
+          isDanger: false,
+          disabled: false,
+          id: "devtools",
+        },
+      ];
+
+      return [mainBtn, ...pluginBtns, ...menuBtns];
+    },
     [
       isDownloading, hasAnyInstall, isInstalled, selectedVersionName,
       handleLaunch, toggleInstall, profile, setActiveView,
-      isGameRunning, stopGame,
+      isGameRunning, stopGame, pluginActions,
     ],
   );
 

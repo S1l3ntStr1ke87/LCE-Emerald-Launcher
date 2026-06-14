@@ -16,6 +16,7 @@ use commands::download;
 use commands::file_dialogs;
 use commands::game;
 use commands::macos_setup;
+use commands::plugins;
 use commands::proxy_cmd;
 use commands::runners;
 use commands::skin;
@@ -95,6 +96,8 @@ pub fn run() {
             relay::stop_proxy,
             relay::stop_all_proxies,
             relay::join_game,
+            plugins::get_plugins_dir,
+            plugins::list_directory,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

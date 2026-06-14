@@ -1,0 +1,9 @@
+{
+  "id": "multiplayer-button",
+  "name": "Multiplayer Button",
+  "version": "1.0.0",
+  "author": "neoapps",
+  "description": "Adds a Multiplayer button to the home menu that opens LCELive",
+  "main": "main.js",
+  "permissions": []
+}

@@ -33,7 +33,11 @@ import {
 } from "../context/LauncherContext";
 import { TauriService } from "../services/TauriService";
 import { useLceLiveNotifications } from "../hooks/useLceLiveNotifications";
+import { usePluginViews } from "../plugins/PluginContext";
+import { PluginManager } from "../plugins/PluginManager";
+import { PluginViewContainer } from "../components/plugins/PluginViewContainer";
 import type { Edition } from "../types/edition";
+import type { ToastOptions } from "../plugins/types";
 import pkg from "../../package.json";
 export default function App() {
   const ui = useUI();
@@ -68,8 +72,51 @@ export default function App() {
   const displayIsDay = config.isDayTime;
 
   const clearError = useCallback(() => game.setError(null), [game]);
-  const clearGameUpdate = useCallback(() => game.setGameUpdateMessage(null), [game]);
-  const clearSteamSuccess = useCallback(() => game.setSteamSuccessMessage(null), [game]);
+  const clearGameUpdate = useCallback(
+    () => game.setGameUpdateMessage(null),
+    [game],
+  );
+  const clearSteamSuccess = useCallback(
+    () => game.setSteamSuccessMessage(null),
+    [game],
+  );
+  const pluginViews = usePluginViews();
+  const [pluginToast, setPluginToast] = useState<{
+    message: string;
+    options?: ToastOptions;
+  } | null>(null);
+  useEffect(() => {
+    const pm = PluginManager.instance;
+    pm.setNavigateCallback((viewId) => {
+      setActiveView(viewId);
+    });
+    pm.setToastCallback((_pluginId, message, options) => {
+      setPluginToast({ message, options });
+    });
+    pm.setSoundCallback((name) => {
+      audio.playSfx(name);
+    });
+  }, [setActiveView, audio.playSfx]);
+
+  useEffect(() => {
+    if (!config.isLoaded) return;
+    PluginManager.instance.updateSnapshots(
+      { ...config } as unknown as Record<string, unknown>,
+      {
+        isGameRunning: game.isGameRunning,
+        downloadProgress: game.downloadProgress,
+        downloadingId: game.downloadingId,
+      },
+      game.installs,
+    );
+  }, [
+    config,
+    game.isGameRunning,
+    game.downloadProgress,
+    game.downloadingId,
+    game.installs,
+    config.isLoaded,
+  ]);
 
   useEffect(() => {
     if (showIntro && config.skipIntro) {
@@ -79,20 +126,20 @@ export default function App() {
 
   useEffect(() => {
     if (config.isLoaded) {
-      const setupCompleted = localStorage.getItem("lce-setup-completed") === "true";
+      const setupCompleted =
+        localStorage.getItem("lce-setup-completed") === "true";
       setShowSetup(!setupCompleted);
       setIsSetupChecked(true);
     }
   }, [config.isLoaded]);
 
-  const selectedEdition = useMemo(() => 
-    game.editions.find((e: Edition) => e.instanceId === config.profile),
-    [game.editions, config.profile]
+  const selectedEdition = useMemo(
+    () => game.editions.find((e: Edition) => e.instanceId === config.profile),
+    [game.editions, config.profile],
   );
   const selectedVersionName = selectedEdition?.name ?? "";
   const hasAnyInstall = game.installs.length > 0;
   const titleImage = selectedEdition?.titleImage ?? "/images/MenuTitle.png";
-
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => e.preventDefault();
     document.addEventListener("contextmenu", handleContextMenu);
@@ -100,19 +147,25 @@ export default function App() {
   }, []);
 
   const animDuration = config.animationsEnabled ? undefined : { duration: 0 };
-  const uiFade = useMemo(() => ({
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-    exit: { opacity: 0 },
-    transition: animDuration ?? { duration: 0.5 },
-  }), [animDuration]);
+  const uiFade = useMemo(
+    () => ({
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: animDuration ?? { duration: 0.5 },
+    }),
+    [animDuration],
+  );
 
-  const backgroundFade = useMemo(() => ({
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-    exit: { opacity: 0 },
-    transition: animDuration ?? { duration: 0.8 },
-  }), [animDuration]);
+  const backgroundFade = useMemo(
+    () => ({
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: animDuration ?? { duration: 0.8 },
+    }),
+    [animDuration],
+  );
 
   if (!config.isLoaded || !isSetupChecked) {
     return <div className="w-screen h-screen bg-black" />;
@@ -120,7 +173,9 @@ export default function App() {
 
   if (showSetup) {
     return (
-      <div className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}>
+      <div
+        className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}
+      >
         <SetupView
           onComplete={() => {
             setShowSetup(false);
@@ -133,7 +188,9 @@ export default function App() {
 
   if (showIntro && !config.skipIntro) {
     return (
-      <div className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}>
+      <div
+        className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}
+      >
         <CinematicIntro
           onComplete={() => {
             setShowIntro(false);
@@ -149,7 +206,6 @@ export default function App() {
       <div
         className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}
       >
-
         <div className="absolute inset-0">
           <AnimatePresence>
             <motion.div
@@ -173,10 +229,7 @@ export default function App() {
           editions={game.editions}
         />
 
-        <AchievementToast
-          message={game.error}
-          onClose={clearError}
-        />
+        <AchievementToast message={game.error} onClose={clearError} />
 
         <AchievementToast
           message={updateMessage}
@@ -209,16 +262,22 @@ export default function App() {
           variant="steam"
         />
 
+        {pluginToast && (
+          <AchievementToast
+            message={pluginToast.message}
+            onClose={() => setPluginToast(null)}
+            title={pluginToast.options?.title}
+            variant={pluginToast.options?.variant}
+          />
+        )}
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col h-full z-10 w-full relative"
         >
           {!config.legacyMode && (
-            <motion.div
-              {...uiFade}
-              className="absolute top-4 left-8 z-50"
-            >
+            <motion.div {...uiFade} className="absolute top-4 left-8 z-50">
               <button
                 onClick={() => {
                   audio.playPressSound();
@@ -330,14 +389,16 @@ export default function App() {
                   </div>
                 </motion.div>
               )}
-              {activeView === "main" && hasAnyInstall && titleImage === "/images/MenuTitle.png" && (
-                <motion.div
-                  {...uiFade}
-                  className="absolute -bottom-6 text-[#A0A0A0] text-sm mc-text-shadow tracking-widest uppercase opacity-80 font-['Mojangles']"
-                >
-                  {selectedVersionName}
-                </motion.div>
-              )}
+              {activeView === "main" &&
+                hasAnyInstall &&
+                titleImage === "/images/MenuTitle.png" && (
+                  <motion.div
+                    {...uiFade}
+                    className="absolute -bottom-6 text-[#A0A0A0] text-sm mc-text-shadow tracking-widest uppercase opacity-80 font-['Mojangles']"
+                  >
+                    {selectedVersionName}
+                  </motion.div>
+                )}
             </div>
           </div>
 
@@ -408,6 +469,12 @@ export default function App() {
                   {activeView === "credits" && (
                     <CreditsView key="credits-view" />
                   )}
+                  {pluginViews.map((pv) => {
+                    if (activeView === pv.id) {
+                      return <PluginViewContainer key={pv.id} registry={pv} />;
+                    }
+                    return null;
+                  })}
                 </AnimatePresence>
               </div>
             </div>
@@ -422,8 +489,8 @@ export default function App() {
               Version: {pkg.version} ({__BUILD_DATE__})
             </div>
             <div className="flex-[2] text-center whitespace-nowrap">
-              Not affiliated with Mojang AB or Microsoft. "Minecraft" is
-              a trademark of Mojang Synergies AB.
+              Not affiliated with Mojang AB or Microsoft. "Minecraft" is a
+              trademark of Mojang Synergies AB.
             </div>
             <div className="flex-1 text-right whitespace-nowrap">
               {connected && "CONTROLLER CONNECTED"}

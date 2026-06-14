@@ -332,6 +332,14 @@ export class TauriService {
     return invoke("restore_instance");
   }
 
+  static async getPluginsDir(): Promise<string> {
+    return invoke("get_plugins_dir");
+  }
+
+  static async listDirectory(path: string): Promise<Array<{ name: string; is_dir: boolean }>> {
+    return invoke("list_directory", { path });
+  }
+
   static async importWorld(
     inputPath: string,
     outputPath: string,
