@@ -1,4 +1,12 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type Dispatch, type SetStateAction } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { TauriService, type CustomEdition } from "../services/TauriService";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Edition } from "../types/edition";
@@ -22,7 +30,7 @@ const BASE_EDITIONS = [
     id: "legacy_evolved",
     name: "neoLegacy",
     desc: "Backporting newer title updates and Minigames back to LCE",
-    url: "https://github.com/pieeebot/neoLegacy/releases/download/latest/neoLegacyWindows64.zip",
+    url: "https://git.neolegacy.dev/neoStudiosLCE/neoLegacy/releases/download/latest/neoLegacyWindows64.zip",
     titleImage: "/images/minecraft_title_neoLegacy.png",
     supportsSlimSkins: true,
     logo: "/images/neoLegacy.png",
@@ -78,7 +86,9 @@ interface GameManagerProps {
   customEditions: CustomEdition[];
   setCustomEditions: (editions: CustomEdition[]) => void;
   customizations: Record<string, { titleImage?: string; panorama?: string }>;
-  setCustomizations: Dispatch<SetStateAction<Record<string, { titleImage?: string; panorama?: string }>>>;
+  setCustomizations: Dispatch<
+    SetStateAction<Record<string, { titleImage?: string; panorama?: string }>>
+  >;
   extraLaunchArgs?: string[];
 }
 
@@ -143,42 +153,24 @@ export function useGameManager({
     initialBranchesSet.current = true;
   }, [profile]);
 
-  useEffect(() => {
-    async function fetchLatestReleases() {
-      try {
-        const response = await fetch(
-          "https://api.github.com/repos/pieeebot/neoLegacy/releases/latest",
-        );
-        if (response.ok) {
-          const data = await response.json();
-          const asset = data.assets.find(
-            (a: { name: string }) => a.name === "neoLegacyWindows64.zip",
-          );
-          if (asset) {
-            setDynamicUrls((prev) => ({
-              ...prev,
-              legacy_evolved: asset.browser_download_url,
-            }));
-          }
-        }
-      } catch (e) {
-        console.error("Failed to fetch latest releases:", e);
-      }
-    }
-    fetchLatestReleases();
-  }, []);
-
   const fetchBranchesForEdition = useCallback(
     async (editionId: string, url: string) => {
       if (branchesFetched.current.has(editionId)) return;
-      if (!url.includes("github.com")) return;
-      const parts = url.split("github.com/")[1].split("/");
-      const owner = parts[0];
-      const repo = parts[1];
+      if (!url.includes("/releases/download/")) return;
       try {
-        const response = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/releases`,
-        );
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname
+          .split("/releases/download/")[0]
+          .split("/")
+          .filter(Boolean);
+        const owner = pathParts[0];
+        const repo = pathParts[1];
+        const isGitHub = urlObj.host === "github.com";
+        const apiBase = isGitHub
+          ? `https://api.github.com/repos/${owner}/${repo}`
+          : `${urlObj.origin}/api/v1/repos/${owner}/${repo}`;
+
+        const response = await fetch(`${apiBase}/releases`);
         if (response.ok) {
           const data = await response.json();
           let tags: string[] = data
@@ -199,6 +191,18 @@ export function useGameManager({
 
           setBranches((prev) => ({ ...prev, [editionId]: tags }));
           branchesFetched.current.add(editionId);
+          if (data.length > 0) {
+            const filename = url.split("/").pop();
+            const asset = data[0].assets?.find(
+              (a: { name: string }) => a.name === filename,
+            );
+            if (asset) {
+              setDynamicUrls((prev) => ({
+                ...prev,
+                [editionId]: asset.browser_download_url,
+              }));
+            }
+          }
         }
       } catch (e) {
         console.error(`Failed to fetch branches for ${editionId}:`, e);
@@ -250,7 +254,7 @@ export function useGameManager({
           selectedBranch === "Stable"
             ? dynamicUrls[`${e.id}_Stable`] || defaultBranchFromUrl
             : selectedBranch;
-        if (e.url.includes("github.com")) {
+        if (e.url.includes("/releases/download/")) {
           const baseUrl = e.url.split("/releases/download/")[0];
           const filename = e.url.split("/").pop();
           url = `${baseUrl}/releases/download/${branchToUse}/${filename}`;
