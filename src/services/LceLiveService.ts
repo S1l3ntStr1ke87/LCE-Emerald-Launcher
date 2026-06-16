@@ -132,7 +132,10 @@ export class LceLiveService {
     if (authed && this._session?.refreshToken && retryCount === 0) {
       try {
         await this.refreshSession(); //neo: i do this on every request only because it doesnt always return 401
-      } catch (err) {}
+      } catch (err) {
+        this.logoutLocal();
+        throw new Error("Session expired. Please log in again.");
+      }
     }
 
     const headers: Record<string, string> = {
@@ -220,7 +223,11 @@ export class LceLiveService {
       this._session = {
         accessToken: data.accessToken,
         refreshToken: data.refreshToken ?? "",
-        account: data.account ?? { accountId: "", username: "", displayName: "" },
+        account: data.account ?? {
+          accountId: "",
+          username: "",
+          displayName: "",
+        },
       };
       this.saveSession();
     }
