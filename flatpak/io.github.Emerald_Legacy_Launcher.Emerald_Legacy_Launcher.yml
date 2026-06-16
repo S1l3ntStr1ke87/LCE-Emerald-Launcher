@@ -16,6 +16,9 @@ finish-args:
   - --filesystem=xdg-data
   - --socket=pulseaudio
   - --filesystem=xdg-run/pipewire-0
+  - --socket=session-bus
+  - --talk-name=org.freedesktop.portal.Desktop
+  - --talk-name=org.freedesktop.portal.OpenURI
 
 modules:
   - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json

@@ -17,7 +17,14 @@ import { TauriService } from "../../services/TauriService";
 import ChooseInstanceModal from "../modals/ChooseInstanceModal";
 import QRCode from "qrcode";
 
-const LceLiveView = memo(function LceLiveView() {
+interface LceLiveViewProps {
+  addFriendTarget?: string | null;
+  onClearAddFriendTarget?: () => void;
+}
+const LceLiveView = memo(function LceLiveView({
+  addFriendTarget,
+  onClearAddFriendTarget,
+}: LceLiveViewProps) {
   const { setActiveView } = useUI();
   const { animationsEnabled } = useConfig();
   const { playPressSound, playBackSound } = useAudio();
@@ -37,7 +44,7 @@ const LceLiveView = memo(function LceLiveView() {
   );
   const [linkError, setLinkError] = useState<string | null>(null);
   const [isHosting, setIsHosting] = useState(false);
-  const [hostStatus, setHostStatus] = useState("");
+  const [_hostStatus, setHostStatus] = useState("");
   const [hostIp, setHostIp] = useState("");
   const [hostPort, setHostPort] = useState(19132);
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -391,6 +398,15 @@ const LceLiveView = memo(function LceLiveView() {
     isDiscovering,
     showHostMethodPicker,
   ]);
+
+  useEffect(() => {
+    if (!addFriendTarget) return;
+    setCurrentTab("friends");
+    handleAction(() =>
+      lceLiveService.sendFriendRequest(addFriendTarget),
+    );
+    onClearAddFriendTarget?.();
+  }, [addFriendTarget, onClearAddFriendTarget]);
 
   const tabs: ("friends" | "requests" | "invites")[] = [
     "friends",

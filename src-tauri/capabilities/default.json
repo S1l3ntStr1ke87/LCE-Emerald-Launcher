@@ -35,6 +35,7 @@
         }
       ]
     },
-    "process:default"
+    "process:default",
+    "deep-link:default"
   ]
 }

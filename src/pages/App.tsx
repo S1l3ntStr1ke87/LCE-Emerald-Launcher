@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import "../css/App.css";
 import HomeView from "../components/views/HomeView";
@@ -39,6 +39,8 @@ import { PluginViewContainer } from "../components/plugins/PluginViewContainer";
 import type { Edition } from "../types/edition";
 import type { ToastOptions } from "../plugins/types";
 import pkg from "../../package.json";
+import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
+import { listen } from "@tauri-apps/api/event";
 export default function App() {
   const ui = useUI();
   const {
@@ -69,8 +71,14 @@ export default function App() {
   } = notifications;
   const [showSetup, setShowSetup] = useState(false);
   const [isSetupChecked, setIsSetupChecked] = useState(false);
+  const pendingDeepLinks = useRef<string[]>([]);
+  const appReadyRef = useRef(false);
+  const [workshopTarget, setWorkshopTarget] = useState<{
+    id: string;
+    type?: string;
+  } | null>(null);
+  const [addFriendTarget, setAddFriendTarget] = useState<string | null>(null);
   const displayIsDay = config.isDayTime;
-
   const clearError = useCallback(() => game.setError(null), [game]);
   const clearGameUpdate = useCallback(
     () => game.setGameUpdateMessage(null),
@@ -124,6 +132,117 @@ export default function App() {
     }
   }, [showIntro, config.skipIntro, setShowIntro]);
 
+  const processDeepLink = useCallback(
+    (url: string) => {
+      try {
+        const parsed = new URL(url);
+        const path = parsed.hostname + parsed.pathname;
+        const parts = path.replace(/^\/+/, "").split("/").filter(Boolean);
+        if (parts.length === 0) return;
+        const action = parts[0];
+        if (action === "launch") {
+          if (parts.length >= 2) {
+            let instanceId = decodeURIComponent(parts[1]);
+            if (instanceId === "neolegacy") instanceId = "legacy_evolved"; //neo: piebot said so
+            TauriService.launchGame(instanceId, []).catch(console.error);
+          } else {
+            setActiveView("main");
+            game.handleLaunch().catch(console.error);
+          }
+          return;
+        }
+
+        if (action === "lcelive" && parts.length >= 2 && parts[1] === "addfriend") {
+          const username = parsed.searchParams.get("username");
+          if (username) {
+            setActiveView("lcelive");
+            setAddFriendTarget(username);
+            return;
+          }
+        }
+
+        if (action === "workshop" && parts.length >= 2) {
+          const workshopId = decodeURIComponent(parts[1]);
+          const knownTypes = ["normal", "bytebukkit", "plugin", "version"];
+          let workshopType: string | undefined;
+          if (parts.length >= 3) {
+            workshopType = parts[2];
+          } else if (parsed.searchParams.get("type")) {
+            workshopType = parsed.searchParams.get("type")!;
+          } else {
+            workshopType = knownTypes.find((t) => parsed.searchParams.has(t));
+          }
+          setActiveView("workshop");
+          setWorkshopTarget({ id: workshopId, type: workshopType });
+          return;
+        }
+
+        setActiveView(action); //neo: yeah no im not checking if its valid or not.
+      } catch (e) {
+        console.error("failed to parse deep link:", e);
+      }
+    },
+    [setActiveView, game.handleLaunch, setWorkshopTarget],
+  );
+
+  const appReady =
+    config.isLoaded && isSetupChecked && !showSetup && !showIntro;
+
+  useEffect(() => {
+    if (appReady) {
+      appReadyRef.current = true;
+      if (pendingDeepLinks.current.length > 0) {
+        for (const url of pendingDeepLinks.current) {
+          processDeepLink(url);
+        }
+        pendingDeepLinks.current = [];
+      }
+    }
+  }, [appReady, processDeepLink]);
+
+  const queueDeepLink = useCallback(
+    (url: string) => {
+      if (appReadyRef.current) {
+        processDeepLink(url);
+      } else {
+        pendingDeepLinks.current.push(url);
+      }
+    },
+    [processDeepLink],
+  );
+
+  useEffect(() => {
+    getCurrent()
+      .then((urls) => {
+        if (urls && urls.length > 0) {
+          queueDeepLink(urls[0]);
+        }
+      })
+      .catch(() => {});
+
+    let unlistenOpenUrl: Function;
+    onOpenUrl((payload) => {
+      for (const url of payload) {
+        queueDeepLink(url);
+      }
+    }).then((unlistenFn) => {
+      unlistenOpenUrl = unlistenFn;
+    });
+
+    let unlistenEvent: Function;
+    listen<string[]>("deep-link", (event) => {
+      for (const url of event.payload) {
+        queueDeepLink(url);
+      }
+    }).then((unlistenFn) => {
+      unlistenEvent = unlistenFn;
+    });
+
+    return () => {
+      if (unlistenOpenUrl) unlistenOpenUrl();
+      if (unlistenEvent) unlistenEvent();
+    };
+  }, [queueDeepLink]);
   useEffect(() => {
     if (config.isLoaded) {
       const setupCompleted =
@@ -433,7 +552,11 @@ export default function App() {
                     <VersionsView key="versions-view" />
                   )}
                   {activeView === "workshop" && (
-                    <WorkshopView key="workshop-view" />
+                    <WorkshopView
+                      key="workshop-view"
+                      workshopTarget={workshopTarget}
+                      onClearWorkshopTarget={() => setWorkshopTarget(null)}
+                    />
                   )}
                   {activeView === "devtools" && (
                     <DevtoolsView key="devtools-view" />
@@ -460,7 +583,11 @@ export default function App() {
                     <SwfView key="swf-editor-view" />
                   )}
                   {activeView === "lcelive" && (
-                    <LceLiveView key="lcelive-view" />
+                    <LceLiveView
+                      key="lcelive-view"
+                      addFriendTarget={addFriendTarget}
+                      onClearAddFriendTarget={() => setAddFriendTarget(null)}
+                    />
                   )}
                   {activeView === "skins" && <SkinsView key="skins-view" />}
                   {activeView === "screenshots" && (
