@@ -61,13 +61,22 @@ pub async fn download_and_install(
     { *state.token.lock().await = None; }
     #[cfg(target_os = "linux")]
     {
-        let status = std::process::Command::new("bsdtar")
+        let bsdtar_ok = std::process::Command::new("bsdtar")
             .args(["-xf", zip_path.to_str().unwrap(), "-C", instance_dir.to_str().unwrap()])
             .status()
-            .map_err(|e| e.to_string())?;
+            .map(|s| s.success())
+            .unwrap_or(false);
 
-        if !status.success() {
-            return Err("Extraction failed".into());
+        if !bsdtar_ok {
+            let unzip_ok = std::process::Command::new("unzip")
+                .args(["-o", zip_path.to_str().unwrap(), "-d", instance_dir.to_str().unwrap()])
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+
+            if !unzip_ok {
+                return Err("Extraction failed".into());
+            }
         }
     }
 
