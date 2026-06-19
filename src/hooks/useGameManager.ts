@@ -72,12 +72,7 @@ const PARTNERSHIP_SERVERS = [
     name: "Kowhaifans Clubhouse",
     ip: "lce.kowhaifan.net",
     port: 25565,
-  },
-  {
-    name: "Relic Network",
-    ip: "lce.relicnetwork.xyz",
-    port: 25565,
-  },
+  }
 ];
 
 interface GameManagerProps {
