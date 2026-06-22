@@ -7,12 +7,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      body: ${{ steps.version.outputs.body }}
     steps:
       - uses: actions/checkout@v4
       - id: version
-        run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+        run: |
+          echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          cat RELEASE_NOTES.md >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
   publish-tauri:
+    needs: get-version
     permissions:
       contents: write
     strategy:
@@ -68,8 +74,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: "Emerald v__VERSION__"
-          releaseBody: |
-            # PLACEHOLDER. CHANGE ME
+          releaseBody: ${{ needs.get-version.outputs.body }}
           releaseDraft: true
           prerelease: false
           uploadUpdaterJson: true
@@ -87,8 +92,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: sleep for 10 seconds
-        run: sleep 10
+      - name: sleep for 20 seconds
+        run: sleep 20
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: emerald.flatpak
@@ -96,6 +101,7 @@ jobs:
           cache-key: flatpak-builder-${{ github.sha }}
       - uses: softprops/action-gh-release@v2
         with:
+          body: ${{ needs.get-version.outputs.body }}
           tag_name: v${{ needs.get-version.outputs.version }}
           files: emerald.flatpak
           draft: true
