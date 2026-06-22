@@ -59,6 +59,45 @@ pub async fn download_and_install(
 
     drop(file);
     { *state.token.lock().await = None; }
+    let keep_list: std::collections::HashSet<&str> = [
+        "Windows64", "Windows64Media", "uid.dat", "username.txt", "settings.dat",
+        "servers.dat", "servers.txt", "server.properties", "options.txt", "servers.db",
+        "workshop_files.json", "screenshots", "update_timestamp.txt",
+        "profile0.dat", "profile1.dat", "profile2.dat", "profile3.dat",
+        "profile4.dat", "profile5.dat", "profile6.dat", "profile7.dat",
+        "profile8.dat", "profile9.dat", "profile10.dat", "proton_prefix"
+    ].iter().copied().collect();
+    if !instance_dir.exists() {
+        fs::create_dir_all(&instance_dir).map_err(|e| e.to_string())?;
+    } else {
+        let workshop_files: std::collections::HashSet<String> = {
+            let wf_path = instance_dir.join("workshop_files.json");
+            fs::read_to_string(&wf_path)
+                .ok()
+                .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
+                .unwrap_or_default()
+                .into_iter()
+                .collect()
+        };
+
+        if let Ok(entries) = fs::read_dir(&instance_dir) {
+            for entry in entries.flatten() {
+                let file_name = entry.file_name();
+                let name_str = file_name.to_string_lossy();
+                let entry_path_str = entry.path().to_string_lossy().to_string();
+                let is_workshop_file = workshop_files.iter().any(|wf| entry_path_str.starts_with(wf) || wf.starts_with(&entry_path_str));
+                if !keep_list.contains(name_str.as_ref()) && !is_workshop_file {
+                    let path = entry.path();
+                    if path.is_dir() {
+                        let _ = fs::remove_dir_all(path);
+                    } else {
+                        let _ = fs::remove_file(path);
+                    }
+                }
+            }
+        }
+    }
+
     #[cfg(target_os = "linux")]
     {
         let bsdtar_ok = std::process::Command::new("bsdtar")
@@ -96,45 +135,6 @@ pub async fn download_and_install(
     }
 
     let _ = fs::remove_file(&zip_path);
-    let keep_list: std::collections::HashSet<&str> = [
-        "Windows64", "Windows64Media", "uid.dat", "username.txt", "settings.dat",
-        "servers.dat", "servers.txt", "server.properties", "options.txt", "servers.db",
-        "workshop_files.json", "screenshots", "update_timestamp.txt",
-        "profile0.dat", "profile1.dat", "profile2.dat", "profile3.dat",
-        "profile4.dat", "profile5.dat", "profile6.dat", "profile7.dat",
-        "profile8.dat", "profile9.dat", "profile10.dat"
-    ].iter().copied().collect();
-    if !instance_dir.exists() {
-        fs::create_dir_all(&instance_dir).map_err(|e| e.to_string())?;
-    } else {
-        let workshop_files: std::collections::HashSet<String> = {
-            let wf_path = instance_dir.join("workshop_files.json");
-            fs::read_to_string(&wf_path)
-                .ok()
-                .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
-                .unwrap_or_default()
-                .into_iter()
-                .collect()
-        };
-
-        if let Ok(entries) = fs::read_dir(&instance_dir) {
-            for entry in entries.flatten() {
-                let file_name = entry.file_name();
-                let name_str = file_name.to_string_lossy();
-                let entry_path_str = entry.path().to_string_lossy().to_string();
-                let is_workshop_file = workshop_files.iter().any(|wf| entry_path_str.starts_with(wf) || wf.starts_with(&entry_path_str));
-                if !keep_list.contains(name_str.as_ref()) && !is_workshop_file {
-                    let path = entry.path();
-                    if path.is_dir() {
-                        let _ = fs::remove_dir_all(path);
-                    } else {
-                        let _ = fs::remove_file(path);
-                    }
-                }
-            }
-        }
-    }
-
     if let Ok(entries) = fs::read_dir(&instance_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
