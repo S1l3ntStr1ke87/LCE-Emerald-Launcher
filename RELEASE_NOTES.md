@@ -26,6 +26,6 @@
 - Delete files *after* downloading rather than *before* that
 
 ## Screenshots
-| | | |
-|-|-|-|
+| | | | |
+|-|-|-|-|
 | <img width="1328" height="853" alt="image" src="https://github.com/user-attachments/assets/14485a65-d514-4f05-8b11-c60cd4130798" /> | <img width="1328" height="853" alt="image" src="https://github.com/user-attachments/assets/5bddf800-df54-4564-96ad-5428ba68abc5" /> | <img width="1328" height="853" alt="image" src="https://github.com/user-attachments/assets/77cd6977-506c-4dbb-9bf6-8447aeb2d416" /> | <img width="1328" height="853" alt="image" src="https://github.com/user-attachments/assets/9d6eaa12-2bea-416e-9650-f20b5864ea72" /> |
