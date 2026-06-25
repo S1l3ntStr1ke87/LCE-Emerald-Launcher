@@ -235,7 +235,7 @@ const WorkshopView = memo(function WorkshopView({
             description: a.short_description,
             extended_description: a.description,
             category: [a.category],
-            thumbnail: a.icon || "",
+            thumbnail: a.icon,
             version: "1.0",
             likes: a.likes,
             download_count: a.downloads,
@@ -261,7 +261,7 @@ const WorkshopView = memo(function WorkshopView({
             description: s.ip,
             extended_description: `**Server:** ${s.type}\n**Version:** ${s.version}\n**Owner:** ${s.owner}`,
             category: [s.type],
-            thumbnail: s.icon || "",
+            thumbnail: s.icon,
             version: s.version,
             server_address: s.ip,
             server_discord: s.discord ?? "",
@@ -1170,7 +1170,7 @@ function PackageCard({
         <div
           className={`w-full relative flex items-center justify-center overflow-hidden bg-black/50 border-b border-[#333] ${pkg.thumbnail.startsWith("http") ? "aspect-square" : "h-[120px]"}`}
         >
-          {imgError ? (
+          {!thumbnailUrl || imgError ? (
             <span className="text-[#555] text-sm mc-text-shadow uppercase tracking-widest">
               No Image
             </span>
@@ -1209,7 +1209,11 @@ function PackageCard({
           )}
         </div>
       ) : (
-        <div className="w-full h-1 bg-black/50 border-b border-[#333]" />
+          <div className="w-full aspect-square flex items-center justify-center bg-black/50 border-b border-[#333]">
+            <span className="text-[#555] text-sm mc-text-shadow uppercase tracking-widest">
+              No Image
+            </span>
+          </div>
       )}
       <div className="flex flex-col p-3 gap-1 relative bg-gradient-to-b from-transparent to-black/20">
         <span
@@ -1409,7 +1413,7 @@ function PackageModal({
             </div>
           ) : (
             <div className="w-full h-[240px] flex-shrink-0 bg-black/60 overflow-hidden relative border-b border-[#444]">
-              {imgError ? (
+              {!thumbnailUrl || imgError ? (
                 <div className="absolute inset-0 flex items-center justify-center opacity-20">
                   <span className="text-4xl mc-text-shadow uppercase tracking-widest">
                     No Image
