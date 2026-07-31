@@ -17,6 +17,12 @@ export interface FriendRequest {
   displayName: string;
 }
 
+export interface SocialEntry { 
+  username: string;
+  displayName: string;
+  uuid: string;
+};
+
 export class LceOnlineService {
   private _session: SessionData | null = null;
   private baseUrl: string = SOCIAL_BASE_URL;
@@ -220,25 +226,12 @@ export class LceOnlineService {
     }
   }
 
-  async getSocialLists(): Promise<{
-    friends: string[];
-    requests: string[];
-    blocked: string[];
-  }> {
-    const raw: string = await this.request<string>(
-      "POST",
-      "/getSocialLists",
-      null,
-    );
-    if (typeof raw !== "string") {
-      return { friends: [], requests: [], blocked: [] };
-    }
-    const withoutPrefix = raw.startsWith("-") ? raw.slice(1) : raw;
-    const parts = withoutPrefix.split("|");
+  async getSocialLists() {
+    const res = await this.request<any>("GET", "/getSocialLists");
     return {
-      friends: parts[0] ? parts[0].split(",").filter(Boolean) : [],
-      requests: parts[1] ? parts[1].split(",").filter(Boolean) : [],
-      blocked: parts[2] ? parts[2].split(",").filter(Boolean) : [],
+      friends: res?.friends ?? [],
+      requests: res?.friendRequests ?? [],
+      blocked: res?.blocked ?? [],
     };
   }
 
